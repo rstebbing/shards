@@ -39,37 +39,45 @@ class Plotter(object):
     def ylim(self):
         return self._lim(self._ymin, self._ymax)
 
+# LineSegment
+class LineSegment(object):
+    def __init__(self, m, l, x0):
+        self._m = m
+        self._l = l
+        self._x0 = x0
+
+    def __call__(self, t):
+        t = np.atleast_1d(t)
+        return self._m * self._l * t[:, np.newaxis] + self._x0
+
+    def closest_preimage(self, Q):
+        Q = np.atleast_2d(Q)
+        u = np.atleast_1d(np.dot(Q - self._x0, self._m) / self._l)
+        u[u < 0.0] = 0.0
+        u[u > 1.0] = 1.0
+        return u
+    
 # main
 def main():
     x0 = np.r_[0.0, 0.0]
     m = np.r_[2.0, 1.0]
     m /= norm(m)
     l = 4.0
-
-    def M(t):
-        t = np.atleast_1d(t)
-        return m * l * t[:, np.newaxis] + x0
-
-    def M_inv(Q):
-        Q = np.atleast_2d(Q)
-        u = np.atleast_1d(np.dot(Q - x0, m) / l)
-        u[u < 0.0] = 0.0
-        u[u > 1.0] = 1.0
-        return u
+    line = LineSegment(m, l, x0)
 
     Q = np.array([[2.0, 2.0],
                   [4.0, 3.0]], dtype=np.float64)
-    u = M_inv(Q)
+    u = line.closest_preimage(Q)
 
     f, ax = plt.subplots()
     ax.set_aspect('equal')
     plot = Plotter(delta=0.05)
 
     t = np.linspace(0.0, 1.0, 20, endpoint=True)
-    plot(ax, M(t), 'ro-')
+    plot(ax, line(t), 'ro-')
 
     for i, ui in enumerate(u):
-        plot(ax, np.r_['0,2', Q[i], M(ui)], 'bo-')
+        plot(ax, np.r_['0,2', Q[i], line(ui)], 'bo-')
 
     ax.set_xlim(plot.xlim)
     ax.set_ylim(plot.ylim)
