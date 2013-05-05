@@ -56,9 +56,23 @@ class LineSegment(object):
         u[u < 0.0] = 0.0
         u[u > 1.0] = 1.0
         return u
+
+# linedt
+def linedt(line, integral_domain):
+    slice_ = tuple(slice(None, d) for d in integral_domain)
+    G = map(np.ravel, np.mgrid[slice_])
+    X = np.transpose(G)
+
+    u = line.closest_preimage(X)
+    r = X - line(u)
+    d = np.sqrt(np.sum(r**2, axis=1))
+
+    D = np.transpose(d.reshape(integral_domain))
+
+    return np.flipud(D)
     
-# main
-def main():
+# main_test_LineSegment
+def main_test_LineSegment():
     x0 = np.r_[0.0, 0.0]
     m = np.r_[2.0, 1.0]
     m /= norm(m)
@@ -84,5 +98,20 @@ def main():
 
     plt.show()
 
+# main_test_linedt
+def main_test_linedt():
+    x0 = np.r_[25.0, 25.0]
+    m = np.r_[2.0, 1.0]
+    m /= norm(m)
+    l = 10.0
+    line = LineSegment(m, l, x0)
+
+    s = linedt(line, (100, 100))
+    f, ax = plt.subplots()
+    ax.imshow(s)
+    plt.show()
+
 if __name__ == '__main__':
-    main()
+    # main_test_LineSegment()
+    main_test_linedt()
+
