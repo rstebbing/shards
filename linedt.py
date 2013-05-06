@@ -50,6 +50,14 @@ class LineSegment(object):
         self._x1 = self._x0 + self._l * self._m
         self._points = np.r_['0,2', self._x0, self._x1]
 
+    @classmethod
+    def from_points(cls, *args):
+        if len(args) == 1:
+            p, q = args[0]
+        else:
+            p, q = args
+        return cls(q - p, p)
+
     @property
     def points(self):
         return self._points
