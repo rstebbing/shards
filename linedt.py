@@ -41,10 +41,12 @@ class Plotter(object):
 
 # LineSegment
 class LineSegment(object):
-    def __init__(self, m, l, x0):
-        self._m = m
-        self._l = l
+    def __init__(self, m, x0, l = 1.0):
+        norm_m = norm(m)
+        self._m = m / norm_m
         self._x0 = x0
+        self._l = l * norm_m
+        self._n = np.r_[-self._m[1], self._m[0]]
 
     def __call__(self, t):
         t = np.atleast_1d(t)
@@ -56,6 +58,14 @@ class LineSegment(object):
         u[u < 0.0] = 0.0
         u[u > 1.0] = 1.0
         return u
+
+    @property
+    def m(self):
+        return self._m
+
+    @property
+    def n(self):
+        return self._n
 
 # linedt
 def linedt(line, integral_domain):
@@ -80,7 +90,7 @@ def main_test_LineSegment():
     m = np.r_[2.0, 1.0]
     m /= norm(m)
     l = 4.0
-    line = LineSegment(m, l, x0)
+    line = LineSegment(m, x0, l)
 
     Q = np.array([[2.0, 2.0],
                   [4.0, 3.0]], dtype=np.float64)
@@ -105,9 +115,8 @@ def main_test_LineSegment():
 def main_test_linedt():
     x0 = np.r_[25.0, 25.0]
     m = np.r_[2.0, 1.0]
-    m /= norm(m)
-    l = 10.0
-    line = LineSegment(m, l, x0)
+    m *= (10.0 / norm(m))
+    line = LineSegment(m, x0)
 
     s = linedt(line, (50, 100))
     f, ax = plt.subplots()
