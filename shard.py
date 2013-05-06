@@ -135,8 +135,7 @@ class Polygon(object):
         
     @classmethod
     def from_points(cls, P, *args, **kwargs):
-        P = np.atleast_2d(P)
-        if P.shape[0] < 3:
+        if len(P) < 3:
             raise ValueError("number of points = %d (< 3)" % P.shape[0])
 
         lines = []
