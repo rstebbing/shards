@@ -52,6 +52,7 @@ class LineSegment(object):
         t = np.atleast_1d(t)
         return self._m * self._l * t[:, np.newaxis] + self._x0
 
+    # closest_preimage
     def closest_preimage(self, Q):
         Q = np.atleast_2d(Q)
         u = np.atleast_1d(np.dot(Q - self._x0, self._m) / self._l)
@@ -59,40 +60,32 @@ class LineSegment(object):
         u[u > 1.0] = 1.0
         return u
 
-    @property
-    def m(self):
-        return self._m
+    # dt
+    def dt(self, integral_domain, outside_left=None):
+        # create `X` as scanning `integral_domain` along rows, from
+        # "top" (max y) to "bottom" (min y)
+        slice_ = tuple(slice(None, d) for d in integral_domain[::-1])
+        G = map(np.ravel, np.mgrid[slice_])
+        X = np.transpose(G)
+        X = np.fliplr(X)
+        X[:,1] *= -1
+        X[:,1] += integral_domain[1] 
 
-    @property
-    def n(self):
-        return self._n
+        u = self.closest_preimage(X)
+        Y = self(u)
+        r = X - Y
+        d = np.sqrt(np.sum(r**2, axis=1))
 
-# linedt
-def linedt(line, integral_domain, outside_left=None):
-    # create `X` as scanning `integral_domain` along rows, from
-    # "top" (max y) to "bottom" (min y)
-    slice_ = tuple(slice(None, d) for d in integral_domain[::-1])
-    G = map(np.ravel, np.mgrid[slice_])
-    X = np.transpose(G)
-    X = np.fliplr(X)
-    X[:,1] *= -1
-    X[:,1] += integral_domain[1] 
-
-    u = line.closest_preimage(X)
-    Y = line(u)
-    r = X - Y
-    d = np.sqrt(np.sum(r**2, axis=1))
-
-    if outside_left is not None:
-        s = (np.dot(r, line.n) > 0).astype(np.float64)
-        s *= 2.0
-        s -= 1.0
-        if not outside_left:
-            s *= -1.0
-        d *= s
-            
-    return d.reshape(integral_domain[::-1])
-
+        if outside_left is not None:
+            s = (np.dot(r, self._n) > 0).astype(np.float64)
+            s *= 2.0
+            s -= 1.0
+            if not outside_left:
+                s *= -1.0
+            d *= s
+                
+        return d.reshape(integral_domain[::-1])
+        
 # main_test_LineSegment
 def main_test_LineSegment():
     x0 = np.r_[0.0, 0.0]
@@ -127,7 +120,7 @@ def main_test_linedt():
     m *= (10.0 / norm(m))
     line = LineSegment(m, x0)
 
-    D = linedt(line, (50, 100), outside_left=True)
+    D = line.dt((50, 100), outside_left=True)
     f, ax = plt.subplots()
     ax.imshow(D)
     plt.show()
