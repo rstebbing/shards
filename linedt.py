@@ -99,7 +99,14 @@ class LineSegment(object):
             d *= s
                 
         return d.reshape(integral_domain[::-1])
-        
+
+    def __repr__(self):
+        fmt = "[%.7g, %.7g]"
+        return "%s(%s, %s, %.7g)" % (self.__class__.__name__,
+                                     fmt % tuple(self._m),
+                                     fmt % tuple(self._x0),
+                                     self._l)
+
 # main_test_LineSegment
 def main_test_LineSegment():
     x0 = np.r_[0.0, 0.0]
