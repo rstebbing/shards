@@ -41,15 +41,9 @@ class Plotter(object):
 
 # LineSegment
 class LineSegment(object):
-    def __init__(self, m, x0, l = 1.0):
-        m = np.asarray(m)
-        norm_m = norm(m)
-        self._m = m / norm_m
-        self._x0 = x0
-        self._l = l * norm_m
-        self._n = np.r_[-self._m[1], self._m[0]]
-        self._x1 = self._x0 + self._l * self._m
-        self._points = np.r_['0,2', self._x0, self._x1]
+    def __init__(self, m, x0):
+        self.m = m
+        self.x0 = x0
 
     @classmethod
     def from_points(cls, *args):
@@ -61,16 +55,31 @@ class LineSegment(object):
 
     @property
     def points(self):
-        return self._points
+        return np.r_['0,2', self.x0, self.x0 + self.l * self.m]
+
+    @property
+    def m(self):
+        return self._m
+
+    @m.setter
+    def m(self, m):
+        m = np.asarray(m)
+        norm_m = norm(m)
+        self._m = m / norm_m
+        self.l = norm_m
+
+    @property
+    def n(self):
+        return np.r_[-self.m[1], self.m[0]]
 
     def __call__(self, t):
         t = np.atleast_1d(t)
-        return self._m * self._l * t[:, np.newaxis] + self._x0
+        return self.m * self.l * t[:, np.newaxis] + self.x0
 
     # closest_preimage
     def closest_preimage(self, Q):
         Q = np.atleast_2d(Q)
-        u = np.atleast_1d(np.dot(Q - self._x0, self._m) / self._l)
+        u = np.atleast_1d(np.dot(Q - self.x0, self.m) / self.l)
         u[u < 0.0] = 0.0
         u[u > 1.0] = 1.0
         return u
@@ -92,7 +101,7 @@ class LineSegment(object):
         d = np.sqrt(np.sum(r**2, axis=1))
 
         if outside_left is not None:
-            s = (np.dot(r, self._n) > 0).astype(np.float64)
+            s = (np.dot(r, self.n) > 0).astype(np.float64)
             s *= 2.0
             s -= 1.0
             if not outside_left:
@@ -180,9 +189,8 @@ def sigmoid(t, k=1.0):
 def main_test_LineSegment():
     x0 = np.r_[0.0, 0.0]
     m = np.r_[2.0, 1.0]
-    m /= norm(m)
-    l = 4.0
-    line = LineSegment(m, x0, l)
+    m *= (4.0 / norm(m))
+    line = LineSegment(m, x0)
 
     Q = np.array([[2.0, 2.0],
                   [4.0, 3.0]], dtype=np.float64)
