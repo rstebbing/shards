@@ -1,0 +1,5 @@
+# traingle
+python make_test_image.py 180 180 1.0 40 40 90 126.6 140 40
+
+# parallelogram
+python make_test_image.py 180 180 1.0 40 40 90 126.6 140 126.6 90 40
