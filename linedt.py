@@ -68,7 +68,7 @@ class LineSegment(object):
         return self._n
 
 # linedt
-def linedt(line, integral_domain):
+def linedt(line, integral_domain, outside_left=None):
     # create `X` as scanning `integral_domain` along rows, from
     # "top" (max y) to "bottom" (min y)
     slice_ = tuple(slice(None, d) for d in integral_domain[::-1])
@@ -78,12 +78,21 @@ def linedt(line, integral_domain):
     X[:,1] *= -1
     X[:,1] += integral_domain[1] 
 
-    # find all preimage positions, then distance to these positions
     u = line.closest_preimage(X)
-    r = X - line(u)
+    Y = line(u)
+    r = X - Y
     d = np.sqrt(np.sum(r**2, axis=1))
+
+    if outside_left is not None:
+        s = (np.dot(r, line.n) > 0).astype(np.float64)
+        s *= 2.0
+        s -= 1.0
+        if not outside_left:
+            s *= -1.0
+        d *= s
+            
     return d.reshape(integral_domain[::-1])
-    
+
 # main_test_LineSegment
 def main_test_LineSegment():
     x0 = np.r_[0.0, 0.0]
@@ -118,9 +127,9 @@ def main_test_linedt():
     m *= (10.0 / norm(m))
     line = LineSegment(m, x0)
 
-    s = linedt(line, (50, 100))
+    D = linedt(line, (50, 100), outside_left=True)
     f, ax = plt.subplots()
-    ax.imshow(s)
+    ax.imshow(D)
     plt.show()
 
 if __name__ == '__main__':
