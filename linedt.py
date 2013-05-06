@@ -213,16 +213,23 @@ def main_test_linedt():
 # main_test_Polygon
 def main_test_Polygon():
     P = np.array([(0.0, 0.0),
-                  (0.5, 0.5 * np.sqrt(3.0)),
+                  (2.5, 1.0),
                   (1.0, 0.0)])
     P *= 50.0
     P += (10.0, 10.0)
     poly = Polygon.from_points(P)
 
     I, D = poly.dt((150, 100), outside_left=True)
+
+    x, y = np.transpose(np.r_['0,2', P, P[0]])
+    y = D.shape[0] - y
+
     f, axs = plt.subplots(2, 1)
-    axs[0].imshow(D)
-    axs[1].imshow(I)
+    for ax, M in zip(axs, (D, I)):
+        ax.imshow(M)
+        ax.set_xlim(0, M.shape[1] - 1)
+        ax.set_ylim(M.shape[0] - 1, 0)
+        ax.plot(x, y, 'ro-')
     plt.show()
 
 if __name__ == '__main__':
