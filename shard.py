@@ -191,6 +191,20 @@ def sigmoid(t, k=1.0):
     t = np.asarray(t)
     return 1.0 / (1.0 + np.exp(k * t))
 
+# Shard
+class Shard(object):
+    def __init__(self, X, y, k, outside_left=True):
+        self._X = np.atleast_2d(X)
+        self._y = np.atleast_1d(y)
+        self._k = k
+        self._outside_left = outside_left
+
+        self._poly = Polygon.from_points(self._X)
+
+    def __call__(self, integral_domain):
+        I, D = self._poly.dt(integral_domain, self._outside_left)
+        return sigmoid(D, self._k)
+
 # main_test_LineSegment
 def main_test_LineSegment():
     x0 = np.r_[0.0, 0.0]
@@ -260,8 +274,31 @@ def main_test_Polygon():
 
     plt.show()
 
+# main_test_Shard
+def main_test_Shard():
+    P = np.array([[  10.,   10.],
+                  [ 135.,   60.],
+                  [  60.,   10.]])
+    y = np.r_[1.0]
+    k = 0.5
+
+    shard = Shard(P, y, k, outside_left=True)
+
+    D = shard((160, 100))
+    x, y = np.transpose(np.r_['0,2', P, P[0]])
+    y = D.shape[0] - y
+
+    f, ax = plt.subplots()
+    ax.imshow(D)
+    ax.set_xlim(0, D.shape[1] - 1)
+    ax.set_ylim(D.shape[0] - 1, 0)
+    ax.plot(x, y, 'ro-')
+    plt.show()
+   
 if __name__ == '__main__':
     # main_test_LineSegment()
     # main_test_linedt()
-    main_test_Polygon()
+    # main_test_Polygon()
+    main_test_Shard()
+
 
