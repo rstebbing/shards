@@ -42,6 +42,7 @@ class Plotter(object):
 # LineSegment
 class LineSegment(object):
     def __init__(self, m, x0, l = 1.0):
+        m = np.asarray(m)
         norm_m = norm(m)
         self._m = m / norm_m
         self._x0 = x0
