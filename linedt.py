@@ -107,6 +107,38 @@ class LineSegment(object):
                                      fmt % tuple(self._x0),
                                      self._l)
 
+# Polygon
+class Polygon(object):
+    def __init__(self, lines, tolerance=1e-4):
+        self._lines = []
+        for i, line in enumerate(lines):
+            prev_line = lines[i - 1]
+            end = prev_line.points[1]
+            start = line.points[0]
+            if norm(end - start) > tolerance:
+                raise ValueError(
+                    "%s does not meet %s with tolerance %.3g (%s != %s)" % 
+                    (prev_line, line, tolerance, end, start))
+
+            self._lines.append(line)
+
+    @classmethod
+    def from_points(cls, P, *args, **kwargs):
+        P = np.atleast_2d(P)
+        if P.shape[0] < 3:
+            raise ValueError("number of points = %d (< 3)" % P.shape[0])
+
+        lines = []
+        for i, p in enumerate(P):
+            q = P[(i + 1) % len(P)]
+            lines.append(LineSegment.from_points(p, q))
+
+        return cls(lines, *args, **kwargs)
+
+    def __repr__(self):
+        return "%s(%s)" % (self.__class__.__name__,
+                           repr(self._lines))
+
 # main_test_LineSegment
 def main_test_LineSegment():
     x0 = np.r_[0.0, 0.0]
@@ -146,7 +178,15 @@ def main_test_linedt():
     ax.imshow(D)
     plt.show()
 
+# main_test_Polygon
+def main_test_Polygon():
+    poly = Polygon.from_points([(0.0, 0.0),
+                                (0.5, 0.5 * np.sqrt(3.0)),
+                                (1.0, 0.0)])
+    print poly
+
 if __name__ == '__main__':
     # main_test_LineSegment()
-    main_test_linedt()
+    # main_test_linedt()
+    main_test_Polygon()
 
