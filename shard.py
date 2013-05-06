@@ -4,6 +4,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+from matplotlib import cm
 from scipy.linalg import norm
 
 # Plotter
@@ -205,6 +206,26 @@ class Shard(object):
         I, D = self._poly.dt(integral_domain, self._outside_left)
         return sigmoid(D, self._k)
 
+    def dX(self, integral_domain, epsilon=1e-4):
+        def f(x):
+            self._poly.points = x.reshape(self._X.shape)
+            return self(integral_domain)
+
+        _x = self._X.ravel()
+        n = _x.shape[0]
+
+        D0 = f(_x)
+        D = np.empty((n,) + D0.shape, dtype=np.float64)
+        for i in xrange(n):
+            x = _x.copy()
+            x[i] += epsilon
+            D[i] = f(x)
+
+        D -= D0
+        D /= epsilon
+
+        return D
+
 # main_test_LineSegment
 def main_test_LineSegment():
     x0 = np.r_[0.0, 0.0]
@@ -280,21 +301,27 @@ def main_test_Shard():
                   [ 135.,   60.],
                   [  60.,   10.]])
     y = np.r_[1.0]
-    k = 0.5
+    k = 0.6
 
     shard = Shard(P, y, k, outside_left=True)
 
-    D = shard((160, 100))
-    x, y = np.transpose(np.r_['0,2', P, P[0]])
-    y = D.shape[0] - y
+    DX = shard.dX((150, 100), epsilon=1e-9)
 
-    f, ax = plt.subplots()
-    ax.imshow(D)
-    ax.set_xlim(0, D.shape[1] - 1)
-    ax.set_ylim(D.shape[0] - 1, 0)
-    ax.plot(x, y, 'ro-')
+    # colour `DX` so that all images are on the same scale
+    min_, max_ = np.amin(DX), np.amax(DX)
+    scaled_DX = (DX - min_) * (255. / (max_ - min_))
+    I = np.around(scaled_DX).astype(np.int32)
+    cmap = cm.gray(np.linspace(0., 1., 256, endpoint=True))
+    coloured_DX = cmap[I]
+
+    assert DX.shape[0] % 2 == 0
+    f, axs = plt.subplots(2, DX.shape[0] / 2)
+    for i, D in enumerate(DX):
+        ax = axs[i % 2, i / 2]
+        ax.set_title('x[%d] : (%.5g, %.5g)' % (i, np.amin(D), np.amax(D)))
+        ax.imshow(coloured_DX[i])
     plt.show()
-   
+
 if __name__ == '__main__':
     # main_test_LineSegment()
     # main_test_linedt()
