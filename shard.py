@@ -171,6 +171,11 @@ class Polygon(object):
 
         return I.reshape(shape[:2]), D.reshape(shape[:2])
 
+# sigmoid
+def sigmoid(t, k=1.0):
+    t = np.asarray(t)
+    return 1.0 / (1.0 + np.exp(k * t))
+
 # main_test_LineSegment
 def main_test_LineSegment():
     x0 = np.r_[0.0, 0.0]
@@ -224,8 +229,9 @@ def main_test_Polygon():
     x, y = np.transpose(np.r_['0,2', P, P[0]])
     y = D.shape[0] - y
 
-    f, axs = plt.subplots(2, 1)
-    for ax, M in zip(axs, (D, I)):
+    to_view = (D, sigmoid(D, k=1.0), I)
+    f, axs = plt.subplots(len(to_view), 1)
+    for ax, M in zip(axs, to_view):
         ax.imshow(M)
         ax.set_xlim(0, M.shape[1] - 1)
         ax.set_ylim(M.shape[0] - 1, 0)
