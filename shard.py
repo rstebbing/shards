@@ -119,24 +119,20 @@ class LineSegment(object):
 
 # Polygon
 class Polygon(object):
-    def __init__(self, lines, tolerance=1e-4):
-        self._lines = []
-        self._points = []
+    def __init__(self, lines):
+        self.lines = list(lines)
 
-        for i, line in enumerate(lines):
-            prev_line = lines[i - 1]
+    # is_closed
+    def is_closed(self, tolerance):
+        for i, line in enumerate(self.lines):
+            prev_line = self.lines[i - 1]
             end = prev_line.points[1]
             start = line.points[0]
             if norm(end - start) > tolerance:
-                raise ValueError(
-                    "%s does not meet %s with tolerance %.3g (%s != %s)" % 
-                    (prev_line, line, tolerance, end, start))
+                return False
 
-            self._lines.append(line)
-            self._points.append(start)
-
-        self._points = np.asarray(self._points)
-
+        return True
+        
     @classmethod
     def from_points(cls, P, *args, **kwargs):
         P = np.atleast_2d(P)
@@ -152,16 +148,17 @@ class Polygon(object):
 
     @property
     def points(self):
-        return self._points
+        return np.asarray(map(lambda l: l.points[0], 
+                              self.lines))
 
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__,
-                           repr(self._lines))
+                           repr(self.lines))
 
     # dt
     def dt(self, integral_domain, outside_left=None):
         D = np.asarray(map(lambda l: l.dt(integral_domain, outside_left),
-                           self._lines))
+                           self.lines))
         D = D.transpose(1, 2, 0)
         shape = D.shape
         D = D.reshape(-1, shape[2])
@@ -231,6 +228,7 @@ def main_test_Polygon():
     P *= 50.0
     P += (10.0, 10.0)
     poly = Polygon.from_points(P)
+    print 'is closed?', poly.is_closed(1e-4)
 
     I, D = poly.dt((150, 100), outside_left=True)
 
