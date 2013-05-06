@@ -150,6 +150,16 @@ class Polygon(object):
         return np.asarray(map(lambda l: l.points[0], 
                               self.lines))
 
+    @points.setter
+    def points(self, P):
+        if len(self.lines) != len(P):
+            raise ValueError("len(P) != %d" % len(self.lines))
+            
+        for i, p in enumerate(P):
+            q = P[(i + 1) % len(P)]
+            self.lines[i].x0 = p
+            self.lines[i].m = q - p
+
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__,
                            repr(self.lines))
