@@ -231,26 +231,33 @@ def main_test_linedt():
 
 # main_test_Polygon
 def main_test_Polygon():
-    P = np.array([(0.0, 0.0),
-                  (2.5, 1.0),
-                  (1.0, 0.0)])
-    P *= 50.0
-    P += (10.0, 10.0)
-    poly = Polygon.from_points(P)
-    print 'is closed?', poly.is_closed(1e-4)
+    P1 = np.array([[  10.,   10.],
+                   [ 135.,   60.],
+                   [  60.,   10.]])
+    P2 = P1.copy()
+    P2[1] += (10.0, 40.0)
 
-    I, D = poly.dt((150, 100), outside_left=True)
+    domain = (160, 100)
 
-    x, y = np.transpose(np.r_['0,2', P, P[0]])
-    y = D.shape[0] - y
+    poly = Polygon.from_points(P1)
 
-    to_view = (D, sigmoid(D, k=1.0), I)
-    f, axs = plt.subplots(len(to_view), 1)
-    for ax, M in zip(axs, to_view):
-        ax.imshow(M)
-        ax.set_xlim(0, M.shape[1] - 1)
-        ax.set_ylim(M.shape[0] - 1, 0)
-        ax.plot(x, y, 'ro-')
+    for P in (P1, P2):
+        print 'is closed?', poly.is_closed(1e-4)
+        poly.points = P
+
+        I, D = poly.dt(domain, outside_left=True)
+
+        x, y = np.transpose(np.r_['0,2', P, P[0]])
+        y = D.shape[0] - y
+
+        to_view = (D, sigmoid(D, k=1.0), I)
+        f, axs = plt.subplots(len(to_view), 1)
+        for ax, M in zip(axs, to_view):
+            ax.imshow(M)
+            ax.set_xlim(0, M.shape[1] - 1)
+            ax.set_ylim(M.shape[0] - 1, 0)
+            ax.plot(x, y, 'ro-')
+
     plt.show()
 
 if __name__ == '__main__':
