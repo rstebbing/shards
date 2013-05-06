@@ -47,6 +47,12 @@ class LineSegment(object):
         self._x0 = x0
         self._l = l * norm_m
         self._n = np.r_[-self._m[1], self._m[0]]
+        self._x1 = self._x0 + self._l * self._m
+        self._points = np.r_['0,2', self._x0, self._x1]
+
+    @property
+    def points(self):
+        return self._points
 
     def __call__(self, t):
         t = np.atleast_1d(t)
