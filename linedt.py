@@ -112,6 +112,8 @@ class LineSegment(object):
 class Polygon(object):
     def __init__(self, lines, tolerance=1e-4):
         self._lines = []
+        self._points = []
+
         for i, line in enumerate(lines):
             prev_line = lines[i - 1]
             end = prev_line.points[1]
@@ -122,6 +124,9 @@ class Polygon(object):
                     (prev_line, line, tolerance, end, start))
 
             self._lines.append(line)
+            self._points.append(start)
+
+        self._points = np.asarray(self._points)
 
     @classmethod
     def from_points(cls, P, *args, **kwargs):
@@ -136,9 +141,35 @@ class Polygon(object):
 
         return cls(lines, *args, **kwargs)
 
+    @property
+    def points(self):
+        return self._points
+
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__,
                            repr(self._lines))
+
+    # dt
+    def dt(self, integral_domain, outside_left=None):
+        D = np.asarray(map(lambda l: l.dt(integral_domain, outside_left),
+                           self._lines))
+        D = D.transpose(1, 2, 0)
+        shape = D.shape
+        D = D.reshape(-1, shape[2])
+
+        if outside_left is not None:
+            s = np.any(D > 0.0, axis=1).astype(np.float64)
+            s *= 2.0 
+            s -= 1.0
+
+        np.absolute(D, D)
+        I = np.argmin(D, axis=1)
+        D = D[np.arange(D.shape[0]), I]
+
+        if outside_left is not None:
+            D *= s
+
+        return I.reshape(shape[:2]), D.reshape(shape[:2])
 
 # main_test_LineSegment
 def main_test_LineSegment():
@@ -181,10 +212,18 @@ def main_test_linedt():
 
 # main_test_Polygon
 def main_test_Polygon():
-    poly = Polygon.from_points([(0.0, 0.0),
-                                (0.5, 0.5 * np.sqrt(3.0)),
-                                (1.0, 0.0)])
-    print poly
+    P = np.array([(0.0, 0.0),
+                  (0.5, 0.5 * np.sqrt(3.0)),
+                  (1.0, 0.0)])
+    P *= 50.0
+    P += (10.0, 10.0)
+    poly = Polygon.from_points(P)
+
+    I, D = poly.dt((150, 100), outside_left=True)
+    f, axs = plt.subplots(2, 1)
+    axs[0].imshow(D)
+    axs[1].imshow(I)
+    plt.show()
 
 if __name__ == '__main__':
     # main_test_LineSegment()
