@@ -204,7 +204,9 @@ class Shard(object):
 
     def __call__(self, integral_domain):
         I, D = self._poly.dt(integral_domain, self._outside_left)
-        return sigmoid(D, self._k)
+        s = (-1,) + (1,) * len(integral_domain)
+        y = self._y.reshape(s)
+        return y * sigmoid(D, self._k)
 
     def dX(self, integral_domain, epsilon=1e-4):
         def f(x):
@@ -224,7 +226,8 @@ class Shard(object):
         D -= D0
         D /= epsilon
 
-        return D
+        i = [1, 0] + range(2, len(D.shape))
+        return D.transpose(*i)
 
 # main_test_LineSegment
 def main_test_LineSegment():
@@ -300,12 +303,14 @@ def main_test_Shard():
     P = np.array([[  10.,   10.],
                   [ 135.,   60.],
                   [  60.,   10.]])
-    y = np.r_[1.0]
+    y = np.r_[1.0, 0.5, 0.3]
     k = 0.6
 
     shard = Shard(P, y, k, outside_left=True)
-
     DX = shard.dX((150, 100), epsilon=1e-9)
+
+    # view first channel only
+    DX = DX[0]
 
     # colour `DX` so that all images are on the same scale
     min_, max_ = np.amin(DX), np.amax(DX)
