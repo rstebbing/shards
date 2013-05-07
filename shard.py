@@ -208,7 +208,7 @@ class Shard(object):
         y = self._y.reshape(s)
         return y * sigmoid(D, self._k)
 
-    def dX(self, integral_domain, epsilon=1e-4):
+    def dX(self, integral_domain, epsilon):
         def f(x):
             self._poly.points = x.reshape(self._X.shape)
             return self(integral_domain)
@@ -307,7 +307,7 @@ def main_test_Shard():
     k = 0.6
 
     shard = Shard(P, y, k, outside_left=True)
-    DX = shard.dX((150, 100), epsilon=1e-9)
+    DX = shard.dX((150, 100), 1e-8)
 
     # view first channel only
     DX = DX[0]
