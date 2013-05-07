@@ -100,6 +100,8 @@ def main():
         H = shard(domain)
         Ji = (J * (1.0 - args.alpha * H[..., np.newaxis]) 
               + args.alpha * y * H[..., np.newaxis])
+        Ji[Ji > 1.0] = 1.0
+        Ji[Ji < 0.0] = 0.0
         return Ji
     all_images = map(X_to_image, all_X, all_y)
 
