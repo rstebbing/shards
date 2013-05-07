@@ -5,6 +5,7 @@ import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 
+from misc.pickle_ import dump
 from scipy.optimize import fmin_cg
 from shard import Shard
 
@@ -113,6 +114,53 @@ def main_test_shard_gradient():
         ax.set_yticks([])
     plt.show()
 
+# main_test_fit_shard
+def main_test_fit_shard():
+    INPUT_PATH = 'data/180,180-40,40,90,127,140,40-1,0,0-2.png'
+    OUTPUT_PATH = 'data/180,180-40,40,90,127,140,40-1,0,0-2.dat'
+    I = plt.imread(INPUT_PATH).astype(np.float64)
+    shape = I.shape[:2]
+    domain = shape[::-1]
+
+    X = np.r_[40.0, 70, 100, 127, 140, 40].reshape(-1, 2)
+    outside_left = True
+    y = np.r_[1.0, 0.0, 0.0]
+    k = 1.0
+    alpha = 0.5
+
+    J = np.zeros_like(I)
+
+    X1, all_X = fit_shard(I, J, alpha, X, y, k, outside_left=outside_left,
+                          maxiter=10)
+    dump(OUTPUT_PATH, (X1, all_X))
+
+    def X_to_image(X):
+        shard = Shard(X, k, outside_left=outside_left)
+        H = shard(domain)
+        Ji = (J * (1.0 - alpha * H[..., np.newaxis]) 
+              + alpha * y * H[..., np.newaxis])
+        return Ji
+    all_images = map(X_to_image, all_X)
+    all_images.insert(0, I)
+        
+    n = len(all_images)
+    rows = int(np.floor(np.sqrt(n)))
+    cols = int(np.ceil(float(n) / rows))
+    w = 1.0 / cols
+    h = 1.0 / rows
+
+    f = plt.figure()
+    for i, im in enumerate(all_images):
+        r = (rows - 1) - i / cols
+        c = i % cols
+        ax = f.add_axes([c * w, r * h, w, h], frameon=False)
+        ax.imshow(im)
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+    plt.show()
+
 if __name__ == '__main__':
-    main_test_shard_gradient()
+    # main_test_shard_gradient()
+    main_test_fit_shard()
     
