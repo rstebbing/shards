@@ -194,47 +194,32 @@ def sigmoid(t, k=1.0):
 
 # Shard
 class Shard(object):
-    def __init__(self, X, y, k, outside_left=True):
+    def __init__(self, X, k, outside_left=True):
         self._X = np.atleast_2d(X)
-        self._y = np.atleast_1d(y)
         self._k = k
         self._outside_left = outside_left
 
         self._poly = Polygon.from_points(self._X)
 
-    def __call__(self, integral_domain, apply_channels=True):
+    def __call__(self, integral_domain, return_dX=False, epsilon=1e-6):
         I, D = self._poly.dt(integral_domain, self._outside_left)
-        D = sigmoid(D, self._k)
-        if apply_channels:
-            D = self._y.reshape((-1,) + (1,) * len(integral_domain)) * D
-        return D
-
-    def dX(self, integral_domain, epsilon):
-        def f(x):
-            self._poly.points = x.reshape(self._X.shape)
-            return self(integral_domain)
+        H = sigmoid(D, self._k)
+        if not return_dX:
+            return H
 
         _x = self._X.ravel()
         n = _x.shape[0]
 
-        D0 = f(_x)
-        D = np.empty((n,) + D0.shape, dtype=np.float64)
+        dX = np.empty((n,) + H.shape, dtype=np.float64)
         for i in xrange(n):
             x = _x.copy()
             x[i] += epsilon
-            D[i] = f(x)
+            self._poly.points = x.reshape(self._X.shape)
+            dX[i] = self(integral_domain)
 
-        D -= D0
-        D /= epsilon
-        return D
-
-    def dy(self, integral_domain):
-        D = self(integral_domain, apply_channels=False)
-        n = len(self._y)
-        R = np.zeros((n, n) + D.shape, dtype=np.float64)
-        for i in xrange(n):
-            R[i, i] = D
-        return R
+        dX -= H
+        dX /= epsilon
+        return H, dX
 
 # main_test_LineSegment
 def main_test_LineSegment():
@@ -310,28 +295,24 @@ def main_test_Shard():
     P = np.array([[  10.,   10.],
                   [ 135.,   60.],
                   [  60.,   10.]])
-    y = np.r_[1.0, 0.5, 0.3]
     k = 0.6
 
-    shard = Shard(P, y, k, outside_left=True)
-    DX = shard.dX((150, 100), 1e-8)
+    shard = Shard(P, k, outside_left=True)
+    H, dX = shard((150, 100), return_dX=True, epsilon=1e-6)
 
-    # view first channel only
-    DX = DX[:, 0, :, :]
-
-    # colour `DX` so that all images are on the same scale
-    min_, max_ = np.amin(DX), np.amax(DX)
-    scaled_DX = (DX - min_) * (255. / (max_ - min_))
-    I = np.around(scaled_DX).astype(np.int32)
+    # colour `dX` so that all images are on the same scale
+    min_, max_ = np.amin(dX), np.amax(dX)
+    scaled_dX = (dX - min_) * (255. / (max_ - min_))
+    I = np.around(scaled_dX).astype(np.int32)
     cmap = cm.gray(np.linspace(0., 1., 256, endpoint=True))
-    coloured_DX = cmap[I]
+    coloured_dX = cmap[I]
 
-    assert DX.shape[0] % 2 == 0
-    f, axs = plt.subplots(2, DX.shape[0] / 2)
-    for i, D in enumerate(DX):
+    assert dX.shape[0] % 2 == 0
+    f, axs = plt.subplots(2, dX.shape[0] / 2)
+    for i, D in enumerate(dX):
         ax = axs[i % 2, i / 2]
         ax.set_title('x[%d] : (%.5g, %.5g)' % (i, np.amin(D), np.amax(D)))
-        ax.imshow(coloured_DX[i])
+        ax.imshow(coloured_dX[i])
     plt.show()
 
 if __name__ == '__main__':
