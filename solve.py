@@ -73,14 +73,27 @@ def fit_shard(I, J, alpha, X, y, k, outside_left=True, epsilon=1e-6, **kwargs):
         else:
             return np.dot(r, r), dx
 
+    callbacks = []
+    def callback_handler(xk):
+        for callback in callbacks:
+            callback(xk)
+
     states = []
     def save_state(xk):
         states.append(np.copy(xk).reshape(X.shape))
 
+    callbacks.append(save_state)
+
     xk = X.ravel()
-    kwargs['disp'] = 0
     save_state(xk)
-    x = fmin_cg(f, xk, fprime, callback=save_state, **kwargs)
+
+    kwargs['disp'] = 0
+    try:
+        callbacks.append(kwargs.pop('callback'))
+    except KeyError:
+        pass
+
+    x = fmin_cg(f, xk, fprime, callback=callback_handler, **kwargs)
 
     return x.reshape(X.shape), states
 
