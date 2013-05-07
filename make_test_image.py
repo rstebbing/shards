@@ -45,10 +45,11 @@ def main():
         output_path = args.output_path
 
     X = np.asarray(args.positions).reshape(-1, 2)
-    shard = Shard(X, args.y, args.k, outside_left=args.outside_left)
+    shard = Shard(X, args.k, outside_left=args.outside_left)
     
     domain = (args.width, args.height)
-    D = shard(domain).transpose(1, 2, 0)
+    alpha = shard(domain)
+    D = args.y.reshape(-1, 1, 1) * alpha
     D = np.around(D * 255.0).astype(np.uint8)
 
     print '->', output_path
