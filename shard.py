@@ -225,9 +225,8 @@ class Shard(object):
 
         D -= D0
         D /= epsilon
+        return D
 
-        i = [1, 0] + range(2, len(D.shape))
-        return D.transpose(*i)
 
 # main_test_LineSegment
 def main_test_LineSegment():
@@ -310,7 +309,7 @@ def main_test_Shard():
     DX = shard.dX((150, 100), 1e-8)
 
     # view first channel only
-    DX = DX[0]
+    DX = DX[:, 0, :, :]
 
     # colour `DX` so that all images are on the same scale
     min_, max_ = np.amin(DX), np.amax(DX)
