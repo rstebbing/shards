@@ -5,6 +5,7 @@ import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 
+from scipy.optimize import fmin_cg
 from shard import Shard
 
 # shard_gradient
@@ -21,6 +22,46 @@ def shard_gradient(I, J, alpha, X, y, k, outside_left=True, epsilon=1e-6):
     J = J.reshape(X.size, -1).transpose()
     dX = np.dot(R.ravel(), J)
     return dX.reshape(X.shape)
+
+# fit_shard
+def fit_shard(I, J, alpha, X, y, k, outside_left=True, epsilon=1e-6, **kwargs):
+    shape = I.shape[:2]
+    domain = shape[::-1]
+
+    d = alpha * (J - y)
+    R0 = (I - J)
+
+    def f(x):
+        shard = Shard(x.reshape(X.shape), k, outside_left=outside_left)
+        H = shard(domain)
+        R = R0 + d * H[..., np.newaxis]
+        r = R.ravel()
+        return np.dot(r, r)
+
+    def fprime(x, return_energy=False):
+        shard = Shard(x.reshape(X.shape), k, outside_left=outside_left)
+        H, dX = shard(domain, return_dX=True, epsilon=epsilon)
+        R = R0 + d * H[..., np.newaxis]
+        J = dX[..., np.newaxis] * d
+        J = J.reshape(X.size, -1).transpose()
+        r = R.ravel()
+        dx = np.dot(r, J)
+
+        if not return_energy:
+            return dx
+        else:
+            return np.dot(r, r), dx
+
+    states = []
+    def save_state(xk):
+        states.append(np.copy(xk).reshape(X.shape))
+
+    xk = X.ravel()
+    kwargs['disp'] = 0
+    save_state(xk)
+    x = fmin_cg(f, xk, fprime, callback=save_state, **kwargs)
+
+    return x.reshape(X.shape), states
 
 # main_test_shard_gradient
 def main_test_shard_gradient():
