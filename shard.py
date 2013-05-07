@@ -202,11 +202,12 @@ class Shard(object):
 
         self._poly = Polygon.from_points(self._X)
 
-    def __call__(self, integral_domain):
+    def __call__(self, integral_domain, apply_channels=True):
         I, D = self._poly.dt(integral_domain, self._outside_left)
-        s = (-1,) + (1,) * len(integral_domain)
-        y = self._y.reshape(s)
-        return y * sigmoid(D, self._k)
+        D = sigmoid(D, self._k)
+        if apply_channels:
+            D = self._y.reshape((-1,) + (1,) * len(integral_domain)) * D
+        return D
 
     def dX(self, integral_domain, epsilon):
         def f(x):
@@ -227,6 +228,13 @@ class Shard(object):
         D /= epsilon
         return D
 
+    def dy(self, integral_domain):
+        D = self(integral_domain, apply_channels=False)
+        n = len(self._y)
+        R = np.zeros((n, n) + D.shape, dtype=np.float64)
+        for i in xrange(n):
+            R[i, i] = D
+        return R
 
 # main_test_LineSegment
 def main_test_LineSegment():
