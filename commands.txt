@@ -1,4 +1,15 @@
 python make_test_image.py 180 180 1.0,0.0,0.0 2.0 40 40 90 126.6 140 40 --output-path data/{default}
 python make_test_image.py 180 180 1.0,0.0,0.0 0.5 40 40 90 126.6 140 126.6 90 40 --output-path data/{default}
 
-python solve_single_shard.py data/180,180-40,40,90,127,140,40-1,0,0-2.png data/180,180-40,40,90,127,140,40-1,0,0-2 black 1.0,0.0,0.0 1.0 0.5 50 30 100 117 130 30 --maxiter 10
+python \
+solve_single_shard.py \
+data/180,180-40,40,90,127,140,40-1,0,0-2.png \
+data/180,180-40,40,90,127,140,40-1,0,0-2 \
+black \
+1.0 \
+0.5 \
+50 30 \
+100 117 \
+130 30 \
+--maxiter 5 \
+--no-limit-colours
