@@ -9,6 +9,26 @@ from misc.pickle_ import dump
 from scipy.optimize import fmin_cg
 from shard import Shard
 
+# subaxes
+def subaxes(n):
+    rows = int(np.floor(np.sqrt(n)))
+    cols = int(np.ceil(float(n) / rows))
+    w = 1.0 / cols
+    h = 1.0 / rows
+
+    f = plt.figure()
+    axs = []
+    for i in xrange(n):
+        r = (rows - 1) - i / cols
+        c = i % cols
+        ax = f.add_axes([c * w, r * h, w, h], frameon=False)
+        axs.append(ax)
+
+    if len(axs) == 1:
+        axs = axs[0]
+
+    return f, axs
+
 # shard_gradient
 def shard_gradient(I, J, alpha, X, y, k, outside_left=True, epsilon=1e-6):
     shape = I.shape[:2]
@@ -94,24 +114,15 @@ def main_test_shard_gradient():
         return H
 
     etas = np.arange(20) * -0.05
-    n = etas.shape[0]
-    rows = int(np.floor(np.sqrt(n)))
-    cols = int(np.ceil(float(n) / rows))
-    w = 1.0 / cols
-    h = 1.0 / rows
+    f, axs = subaxes(etas.shape[0])
 
-    f = plt.figure()
     for i, eta in enumerate(etas):
         H = apply_gradient(eta)
         Ji = (J * (1.0 - alpha * H[..., np.newaxis]) 
               + alpha * y * H[..., np.newaxis])
-
-        r = (rows - 1) - i / cols
-        c = i % cols
-        ax = f.add_axes([c * w, r * h, w, h], frameon=False)
-        ax.imshow(Ji)
-        ax.set_xticks([])
-        ax.set_yticks([])
+        axs[i].imshow(Ji)
+        axs[i].set_xticks([])
+        axs[i].set_yticks([])
     plt.show()
 
 # main_test_fit_shard
@@ -143,20 +154,11 @@ def main_test_fit_shard():
     all_images = map(X_to_image, all_X)
     all_images.insert(0, I)
         
-    n = len(all_images)
-    rows = int(np.floor(np.sqrt(n)))
-    cols = int(np.ceil(float(n) / rows))
-    w = 1.0 / cols
-    h = 1.0 / rows
-
-    f = plt.figure()
+    f, axs = subaxes(len(all_images))
     for i, im in enumerate(all_images):
-        r = (rows - 1) - i / cols
-        c = i % cols
-        ax = f.add_axes([c * w, r * h, w, h], frameon=False)
-        ax.imshow(im)
-        ax.set_xticks([])
-        ax.set_yticks([])
+        axs[i].imshow(im)
+        axs[i].set_xticks([])
+        axs[i].set_yticks([])
 
     plt.show()
 
