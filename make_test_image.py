@@ -24,9 +24,11 @@ def main():
                         default=True)
     args = parser.parse_args()
 
-    args.y = eval(args.y)
+    args.y = np.asarray(eval(args.y))
     if len(args.y) != 3:
         raise ValueError("y must be a 3-tuple")
+    if np.any(args.y < 0.0) or np.any(args.y > 1.0):
+        raise ValueError("0 <= y[i] <= 1")
 
     if len(args.positions) % 2 != 0:
         raise ValueError("positions must be specified in pairs")
