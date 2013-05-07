@@ -18,7 +18,6 @@ def main():
     parser.add_argument('input_path')
     parser.add_argument('output_dir')
     parser.add_argument('base', type=str, choices=('black', 'white'))
-    parser.add_argument('y', type=str)
     parser.add_argument('k', type=float)
     parser.add_argument('alpha', type=float)
     parser.add_argument('positions', type=float, nargs='*')
@@ -30,15 +29,11 @@ def main():
                         dest='limit_colours',
                         action='store_false',
                         default=True)
+    parser.add_argument('--y', type=str, default='None')
     parser.add_argument('--maxiter', type=int, default=10)
 
     args = parser.parse_args()
-    args.y = np.asarray(eval(args.y))
-
-    if len(args.y) != 3:
-        raise ValueError("y must be a 3-tuple")
-    if np.any(args.y < 0.0) or np.any(args.y > 1.0):
-        raise ValueError("0 <= y[i] <= 1")
+    args.y = eval(args.y)
 
     if args.alpha < 0.0 or args.alpha > 1.0:
         raise ValueError("0 <= alpha <= 1")
@@ -57,7 +52,6 @@ def main():
     domain = shape[::-1]
 
     X = np.asarray(args.positions).reshape(-1, 2)
-    y = args.y
     J = np.empty_like(I)
     if args.base == 'black':
         J.fill(0.)
@@ -66,15 +60,22 @@ def main():
 
     print 'X:'
     print X
-    print 'y:', y
     print 'k:', args.k
     print 'alpha:', args.alpha
     print 'outside_left:', args.outside_left
 
+    if args.y is None:
+        print 'initialise y (limit_colours = "%s") ...' % args.limit_colours
+        y = colour_shard(I, J, args.alpha, X, args.k, 
+                         limit_colours=args.limit_colours)
+    else:
+        y = np.asarray(args.y)
+        
+    print 'y:', y
+
     solver_iteration = count(1)
     def print_solver_iteration(xk):
         print ' %d/%d' % (next(solver_iteration), args.maxiter)
-
 
     print 'solving X ...'
     X1, all_X = fit_shard(I, J, args.alpha, X, y, args.k, 
