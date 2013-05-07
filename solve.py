@@ -4,8 +4,11 @@
 import argparse
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
+from itertools import count
 from misc.pickle_ import dump
+from scipy.misc import imsave # requires PIL
 from scipy.optimize import fmin_cg
 from shard import Shard
 
@@ -138,44 +141,92 @@ def main_test_shard_gradient():
         axs[i].set_yticks([])
     plt.show()
 
-# main_test_fit_shard
-def main_test_fit_shard():
-    INPUT_PATH = 'data/180,180-40,40,90,127,140,40-1,0,0-2.png'
-    OUTPUT_PATH = 'data/180,180-40,40,90,127,140,40-1,0,0-2.dat'
-    I = plt.imread(INPUT_PATH).astype(np.float64)
+# main
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('input_path')
+    parser.add_argument('output_dir')
+    parser.add_argument('base', type=str, choices=('black', 'white'))
+    parser.add_argument('y', type=str)
+    parser.add_argument('k', type=float)
+    parser.add_argument('alpha', type=float)
+    parser.add_argument('positions', type=float, nargs='*')
+    parser.add_argument('--outside-right', 
+                        dest='outside_left',
+                        action='store_false',
+                        default=True)
+    parser.add_argument('--maxiter', type=int, default=10)
+
+    args = parser.parse_args()
+    args.y = np.asarray(eval(args.y))
+
+    if len(args.y) != 3:
+        raise ValueError("y must be a 3-tuple")
+    if np.any(args.y < 0.0) or np.any(args.y > 1.0):
+        raise ValueError("0 <= y[i] <= 1")
+
+    if args.alpha < 0.0 or args.alpha > 1.0:
+        raise ValueError("0 <= alpha <= 1")
+
+    if len(args.positions) % 2 != 0:
+        raise ValueError("positions must be specified in pairs")
+
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
+
+    make_output_path = lambda f: os.path.join(args.output_dir, f)
+
+    print '<-', args.input_path
+    I = plt.imread(args.input_path).astype(np.float64)
     shape = I.shape[:2]
     domain = shape[::-1]
 
-    X = np.r_[40.0, 70, 100, 127, 140, 40].reshape(-1, 2)
-    outside_left = True
-    y = np.r_[1.0, 0.0, 0.0]
-    k = 1.0
-    alpha = 0.5
+    X = np.asarray(args.positions).reshape(-1, 2)
+    J = np.empty_like(I)
+    if args.base == 'black':
+        J.fill(0.)
+    else:
+        J.fill(1.)
 
-    J = np.zeros_like(I)
+    print 'X:'
+    print X
+    print 'y:', args.y
+    print 'k:', args.k
+    print 'alpha:', args.alpha
+    print 'outside_left:', args.outside_left
 
-    X1, all_X = fit_shard(I, J, alpha, X, y, k, outside_left=outside_left,
-                          maxiter=10)
-    dump(OUTPUT_PATH, (X1, all_X))
+    solver_iteration = count(1)
+    def print_solver_iteration(xk):
+        print ' %d/%d' % (next(solver_iteration), args.maxiter)
+
+    print 'solving ...'
+    X1, all_X = fit_shard(I, J, args.alpha, X, args.y, args.k, 
+                          outside_left=args.outside_left,
+                          maxiter=args.maxiter,
+                          callback=print_solver_iteration)
+    output_path = make_output_path('X.dat')
+    print '->', output_path
+    dump(output_path, (X1, all_X))
 
     def X_to_image(X):
-        shard = Shard(X, k, outside_left=outside_left)
+        shard = Shard(X, args.k, outside_left=args.outside_left)
         H = shard(domain)
-        Ji = (J * (1.0 - alpha * H[..., np.newaxis]) 
-              + alpha * y * H[..., np.newaxis])
+        Ji = (J * (1.0 - args.alpha * H[..., np.newaxis]) 
+              + args.alpha * args.y * H[..., np.newaxis])
         return Ji
     all_images = map(X_to_image, all_X)
-    all_images.insert(0, I)
-        
-    f, axs = subaxes(len(all_images))
+
     for i, im in enumerate(all_images):
-        axs[i].imshow(im)
-        axs[i].set_xticks([])
-        axs[i].set_yticks([])
+        output_path = make_output_path('%d.png' % i)
+        print '->', output_path
+        im = np.around(im * 255.0).astype(np.uint8)
+        imsave(output_path, im)
 
-    plt.show()
-
+    output_path = make_output_path('I.png')
+    print '->', output_path
+    imsave(output_path, np.around(I * 255.0).astype(np.uint8))
+        
 if __name__ == '__main__':
     # main_test_shard_gradient()
-    main_test_fit_shard()
+    main()
     
