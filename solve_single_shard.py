@@ -47,7 +47,7 @@ def main():
     make_output_path = lambda f: os.path.join(args.output_dir, f)
 
     print '<-', args.input_path
-    I = plt.imread(args.input_path).astype(np.float64)
+    I = plt.imread(args.input_path).astype(np.float64)[..., :3]
     shape = I.shape[:2]
     domain = shape[::-1]
 
@@ -83,6 +83,8 @@ def main():
                           maxiter=args.maxiter,
                           callback=print_solver_iteration)
     all_y = map(lambda X: y, all_X)
+    print 'X1:'
+    print X1
 
     print 'solving y (limit_colours = "%s") ...' % args.limit_colours
     y1 = colour_shard(I, J, args.alpha, X1, args.k, 
