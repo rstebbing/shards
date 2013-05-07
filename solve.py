@@ -95,6 +95,31 @@ def fit_shard(I, J, alpha, X, y, k, outside_left=True, epsilon=1e-6, **kwargs):
 
     return x.reshape(X.shape), states
 
+# colour_shard
+def colour_shard(I, J, alpha, X, k, outside_left=True, 
+                       limit_colours=True):
+    shape = I.shape[:2]
+    domain = shape[::-1]
+
+    shard = Shard(X, k, outside_left=outside_left)
+    H = shard(domain)
+
+    B = alpha * H
+    K = I - J * (1.0 - B[..., np.newaxis])
+
+    b = B.ravel()
+    bTb = np.dot(b, b)
+
+    y = np.empty(K.shape[-1], dtype=np.float64)
+    for i in xrange(K.shape[-1]):
+        y[i] = np.dot(K[..., i].ravel(), b) / bTb
+
+    if limit_colours:
+        y[y > 1.0] = 1.0
+        y[y < 0.0] = 0.0
+
+    return y
+
 # main_test_shard_gradient
 def main_test_shard_gradient():
     INPUT_PATH = 'data/180,180-40,40,90,127,140,40-1,0,0-2.png'
