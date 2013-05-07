@@ -9,7 +9,7 @@ import os
 from itertools import count
 from misc.pickle_ import dump
 from scipy.misc import imsave # requires PIL
-from solve import fit_shard
+from solve import fit_shard, colour_shard
 from shard import Shard
 
 # main
@@ -24,6 +24,10 @@ def main():
     parser.add_argument('positions', type=float, nargs='*')
     parser.add_argument('--outside-right', 
                         dest='outside_left',
+                        action='store_false',
+                        default=True)
+    parser.add_argument('--no-limit-colours', 
+                        dest='limit_colours',
                         action='store_false',
                         default=True)
     parser.add_argument('--maxiter', type=int, default=10)
@@ -53,6 +57,7 @@ def main():
     domain = shape[::-1]
 
     X = np.asarray(args.positions).reshape(-1, 2)
+    y = args.y
     J = np.empty_like(I)
     if args.base == 'black':
         J.fill(0.)
@@ -61,7 +66,7 @@ def main():
 
     print 'X:'
     print X
-    print 'y:', args.y
+    print 'y:', y
     print 'k:', args.k
     print 'alpha:', args.alpha
     print 'outside_left:', args.outside_left
@@ -70,22 +75,33 @@ def main():
     def print_solver_iteration(xk):
         print ' %d/%d' % (next(solver_iteration), args.maxiter)
 
-    print 'solving ...'
-    X1, all_X = fit_shard(I, J, args.alpha, X, args.y, args.k, 
+
+    print 'solving X ...'
+    X1, all_X = fit_shard(I, J, args.alpha, X, y, args.k, 
                           outside_left=args.outside_left,
                           maxiter=args.maxiter,
                           callback=print_solver_iteration)
+    all_y = map(lambda X: y, all_X)
+
+    print 'solving y (limit_colours = "%s") ...' % args.limit_colours
+    y1 = colour_shard(I, J, args.alpha, X1, args.k, 
+                      limit_colours=args.limit_colours)
+    print 'y1:', y1
+
+    all_X.append(X1)
+    all_y.append(y1)
+
     output_path = make_output_path('X.dat')
     print '->', output_path
-    dump(output_path, (X1, all_X))
+    dump(output_path, (X1, all_X, all_y))
 
-    def X_to_image(X):
+    def X_to_image(X, y):
         shard = Shard(X, args.k, outside_left=args.outside_left)
         H = shard(domain)
         Ji = (J * (1.0 - args.alpha * H[..., np.newaxis]) 
-              + args.alpha * args.y * H[..., np.newaxis])
+              + args.alpha * y * H[..., np.newaxis])
         return Ji
-    all_images = map(X_to_image, all_X)
+    all_images = map(X_to_image, all_X, all_y)
 
     for i, im in enumerate(all_images):
         output_path = make_output_path('%d.png' % i)
