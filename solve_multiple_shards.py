@@ -70,12 +70,6 @@ class ShardReconstructor(object):
         J1[J1 < 0.0] = 0.0
         return J1
 
-    def new_reconstruction(self, base):
-        if base == 'black':
-            return np.zeros_like(self._I)
-        else:
-            return np.ones_like(self._I)
-            
     def candidate_shard(self, J, maxiter=10, verbose=False, **kwargs):
         X = self._sample_shard()
         y = self._colour_shard(J, X)
@@ -120,7 +114,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('input_path')
     parser.add_argument('output_dir')
-    parser.add_argument('base', type=str, choices=('black', 'white'))
+    parser.add_argument('base', help='{white, black, BASE}')
     parser.add_argument('k', type=float)
     parser.add_argument('alpha', type=float)
     parser.add_argument('shards', type=int)
@@ -146,8 +140,19 @@ def main():
     print '<-', args.input_path
     I = plt.imread(args.input_path).astype(np.float64)[..., :3]
 
+    if args.base == 'white':
+        J = np.ones_like(I)
+    elif args.base == 'black':
+        J = np.zeros_like(I)
+    else:
+        head, tail = os.path.split(args.base)
+        root, ext = os.path.splitext(tail)
+        if ext == '.dat':
+            J = np.load(args.base)
+        else:
+            J = plt.imread(args.base).astype(np.float64)[..., :3]
+
     sr = ShardReconstructor(I, args.alpha, n=args.n, k=args.k)
-    J = sr.new_reconstruction(args.base)
 
     for n in xrange(args.shards):
         X, y, all_Xy = sr.candidate_shard(J, maxiter=args.maxiter,
