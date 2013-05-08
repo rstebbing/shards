@@ -10,6 +10,7 @@ import os
 from itertools import count
 from pickle_ import dump
 from sample import sample_polygon
+from scipy.linalg import norm
 from shard import Shard, Polygon
 from solve import fit_shard, colour_shard
 
@@ -166,14 +167,18 @@ def main():
             for i, im in enumerate(J1s):
                 f = plt.figure()
                 ax = f.add_axes([0.0, 0.0, 1.0, 1.0], frameon=False)
-
-                im = np.around(im * 255.0).astype(np.uint8)
                 ax.imshow(im)
 
                 X = all_Xy[i][0]
                 x, y = np.transpose(np.r_['0,2', X, X[0]])
                 y = im.shape[0] - y
-                ax.plot(x, y, '-', c='w' if args.base == 'black' else 'k')
+
+                ac = np.mean(im.reshape(-1, im.shape[-1]))
+                d_to_black = norm(ac)
+                d_to_white = norm(1.0 - ac)
+                c = 'w' if d_to_black < d_to_white else 'k'
+
+                ax.plot(x, y, '-', c=c)
 
                 ax.set_xlim(0, im.shape[1] - 1)
                 ax.set_ylim(im.shape[0] - 1, 0)
