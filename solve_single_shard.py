@@ -77,10 +77,9 @@ def main():
         print ' %d/%d' % (next(solver_iteration), args.maxiter)
 
     print 'solving X ...'
-    X1, all_X = fit_shard(I, J, args.alpha, X, y, args.k,
+    X1, all_Xy = fit_shard(I, J, args.alpha, X, y, args.k,
                           maxiter=args.maxiter,
                           callback=print_solver_iteration)
-    all_y = map(lambda X: y, all_X)
     print 'X1:'
     print X1
 
@@ -89,8 +88,7 @@ def main():
                       limit_colours=args.limit_colours)
     print 'y1:', y1
 
-    all_X.append(X1)
-    all_y.append(y1)
+    all_Xy.append((X1, y1))
 
     output_path = make_output_path('X.dat')
     print '->', output_path
