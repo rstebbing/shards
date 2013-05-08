@@ -206,12 +206,21 @@ def sigmoid(t, k=1.0):
 
 # Shard
 class Shard(object):
-    def __init__(self, X, k, outside_left=True):
+    def __init__(self, X, k):
         self._X = np.atleast_2d(X)
         self._k = k
-        self._outside_left = outside_left
 
         self._poly = Polygon.from_points(self._X)
+
+        # determine `outside_left`
+        interior_angles = self._poly.interior_angles()
+        sum_interior = np.sum(interior_angles)
+
+        n = self._X.shape[0]
+        expected_interior = (n - 2) * np.pi
+        expected_exterior = 2.0 * np.pi * n - expected_interior
+        self._outside_left = (np.abs(sum_interior - expected_interior) >= 
+                              np.abs(sum_interior - expected_exterior))
 
     def __call__(self, integral_domain, return_dX=False, epsilon=1e-6):
         I, D = self._poly.dt(integral_domain, self._outside_left)
@@ -309,7 +318,7 @@ def main_test_Shard():
                   [  60.,   10.]])
     k = 0.6
 
-    shard = Shard(P, k, outside_left=True)
+    shard = Shard(P, k)
     H, dX = shard((150, 100), return_dX=True, epsilon=1e-6)
 
     # colour `dX` so that all images are on the same scale
