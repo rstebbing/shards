@@ -8,7 +8,7 @@ import numpy as np
 import os
 
 from itertools import count
-from misc.pickle_ import dump
+from pickle_ import dump
 from sample import sample_polygon
 from scipy.misc import imsave # requires PIL
 from shard import Shard, Polygon
@@ -151,6 +151,7 @@ def main():
 
         J1s = map(lambda t: sr.add_shard_to_reconstruction(J, t[0], t[1]), 
                   all_Xy)
+        J = J1s[-1]
 
         for i, im in enumerate(J1s):
             f = plt.figure()
@@ -178,7 +179,9 @@ def main():
             f.savefig(output_path, dpi=dpi, bbox_inches='tight', pad_inches=0.0)
             plt.close(f)
             
-        J = J1s[-1]
+        output_path = ensure_output_path(n, 'all_Xy.dat')
+        print '->', output_path
+        dump(output_path, (all_Xy, args.__dict__))
 
 if __name__ == '__main__':
     main()
