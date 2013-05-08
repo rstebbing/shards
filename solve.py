@@ -28,10 +28,10 @@ def subaxes(n):
     return f, axs
 
 # shard_gradient
-def shard_gradient(I, J, alpha, X, y, k, outside_left=True, epsilon=1e-6):
+def shard_gradient(I, J, alpha, X, y, k, epsilon=1e-6):
     shape = I.shape[:2]
     domain = shape[::-1]
-    shard = Shard(X, k, outside_left=outside_left)
+    shard = Shard(X, k)
 
     H, dX = shard(domain, return_dX=True, epsilon=epsilon)
 
@@ -43,7 +43,7 @@ def shard_gradient(I, J, alpha, X, y, k, outside_left=True, epsilon=1e-6):
     return dX.reshape(X.shape)
 
 # fit_shard
-def fit_shard(I, J, alpha, X, y, k, outside_left=True, epsilon=1e-6, **kwargs):
+def fit_shard(I, J, alpha, X, y, k, epsilon=1e-6, **kwargs):
     shape = I.shape[:2]
     domain = shape[::-1]
 
@@ -51,14 +51,14 @@ def fit_shard(I, J, alpha, X, y, k, outside_left=True, epsilon=1e-6, **kwargs):
     R0 = (I - J)
 
     def f(x):
-        shard = Shard(x.reshape(X.shape), k, outside_left=outside_left)
+        shard = Shard(x.reshape(X.shape), k)
         H = shard(domain)
         R = R0 + d * H[..., np.newaxis]
         r = R.ravel()
         return np.dot(r, r)
 
     def fprime(x, return_energy=False):
-        shard = Shard(x.reshape(X.shape), k, outside_left=outside_left)
+        shard = Shard(x.reshape(X.shape), k)
         H, dX = shard(domain, return_dX=True, epsilon=epsilon)
         R = R0 + d * H[..., np.newaxis]
         J = dX[..., np.newaxis] * d
@@ -96,12 +96,11 @@ def fit_shard(I, J, alpha, X, y, k, outside_left=True, epsilon=1e-6, **kwargs):
     return x.reshape(X.shape), states
 
 # colour_shard
-def colour_shard(I, J, alpha, X, k, outside_left=True, 
-                       limit_colours=True):
+def colour_shard(I, J, alpha, X, k, limit_colours=True):
     shape = I.shape[:2]
     domain = shape[::-1]
 
-    shard = Shard(X, k, outside_left=outside_left)
+    shard = Shard(X, k)
     H = shard(domain)
 
     B = alpha * H
@@ -128,18 +127,17 @@ def main_test_shard_gradient():
     domain = shape[::-1]
 
     X = np.r_[40.0, 50, 100, 127, 140, 40].reshape(-1, 2)
-    outside_left = True
     y = np.r_[1.0, 0.0, 0.0]
     k = 1.0
     alpha = 0.5
 
     # `J` is the initial image which the shard is blended with
     J = np.zeros_like(I)
-    dX = shard_gradient(I, J, alpha, X, y, k, outside_left=outside_left)
+    dX = shard_gradient(I, J, alpha, X, y, k)
 
     def apply_gradient(eta):
         X_ = X + eta * dX
-        shard = Shard(X_, k, outside_left=outside_left)
+        shard = Shard(X_, k)
 
         H = shard(domain)
         d = alpha * (J - y)

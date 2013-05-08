@@ -25,10 +25,6 @@ def main():
     parser.add_argument('k', type=float)
     parser.add_argument('alpha', type=float)
     parser.add_argument('positions', type=float, nargs='*')
-    parser.add_argument('--outside-right', 
-                        dest='outside_left',
-                        action='store_false',
-                        default=True)
     parser.add_argument('--no-limit-colours', 
                         dest='limit_colours',
                         action='store_false',
@@ -66,7 +62,6 @@ def main():
     print X
     print 'k:', args.k
     print 'alpha:', args.alpha
-    print 'outside_left:', args.outside_left
 
     if args.y is None:
         print 'initialise y (limit_colours = "%s") ...' % args.limit_colours
@@ -82,8 +77,7 @@ def main():
         print ' %d/%d' % (next(solver_iteration), args.maxiter)
 
     print 'solving X ...'
-    X1, all_X = fit_shard(I, J, args.alpha, X, y, args.k, 
-                          outside_left=args.outside_left,
+    X1, all_X = fit_shard(I, J, args.alpha, X, y, args.k,
                           maxiter=args.maxiter,
                           callback=print_solver_iteration)
     all_y = map(lambda X: y, all_X)
@@ -103,7 +97,7 @@ def main():
     dump(output_path, (X1, all_X, all_y))
 
     def X_to_image(X, y):
-        shard = Shard(X, args.k, outside_left=args.outside_left)
+        shard = Shard(X, args.k)
         H = shard(domain)
         Ji = (J * (1.0 - args.alpha * H[..., np.newaxis]) 
               + args.alpha * y * H[..., np.newaxis])

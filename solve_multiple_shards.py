@@ -37,10 +37,6 @@ class ShardReconstructor(object):
     def _sample_shard(self):
         while True:
             X = sample_polygon(self._n)
-
-            # force `X` to respect `outside_left = True`
-            X = np.flipud(X)
-
             X *= np.random.rand() * np.amin(self._domain)
             X += np.random.rand(len(self._domain)) * self._domain
             
@@ -64,7 +60,7 @@ class ShardReconstructor(object):
                 return X
 
     def add_shard_to_reconstruction(self, J, X, y):
-        shard = Shard(X, self._k, outside_left=True)
+        shard = Shard(X, self._k)
         H = shard(self._domain)
         J1 = (J * (1.0 - self._alpha * H[..., np.newaxis])
               + self._alpha * y * H[..., np.newaxis])
@@ -96,7 +92,6 @@ class ShardReconstructor(object):
 
         X1, all_X = fit_shard(self._I, J, self._alpha, 
                               X, y, self._k,
-                              outside_left=True,
                               **kwargs)
 
         all_y = map(lambda X: y, all_X)

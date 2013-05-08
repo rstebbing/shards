@@ -18,10 +18,6 @@ def main():
     parser.add_argument('k', type=float)
     parser.add_argument('positions', type=float, nargs='*')
     parser.add_argument('--output-path', default='{default}')
-    parser.add_argument('--outside-right', 
-                        dest='outside_left',
-                        action='store_false',
-                        default=True)
     args = parser.parse_args()
 
     args.y = np.asarray(eval(args.y))
@@ -45,7 +41,7 @@ def main():
         output_path = args.output_path
 
     X = np.asarray(args.positions).reshape(-1, 2)
-    shard = Shard(X, args.k, outside_left=args.outside_left)
+    shard = Shard(X, args.k)
     
     domain = (args.width, args.height)
     alpha = shard(domain)
