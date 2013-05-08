@@ -180,8 +180,8 @@ def main():
 
                 ax.plot(x, y, '-', c=c)
 
-                ax.set_xlim(0, im.shape[1] - 1)
-                ax.set_ylim(im.shape[0] - 1, 0)
+                ax.set_xlim(-0.5, im.shape[1] - 0.5)
+                ax.set_ylim(im.shape[0] - 0.5, -0.5)
                 ax.set_xticks([])
                 ax.set_yticks([])
 

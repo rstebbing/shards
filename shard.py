@@ -286,8 +286,8 @@ def main_test_Polygon():
         f, axs = plt.subplots(len(to_view), 1)
         for ax, M in zip(axs, to_view):
             ax.imshow(M)
-            ax.set_xlim(0, M.shape[1] - 1)
-            ax.set_ylim(M.shape[0] - 1, 0)
+            ax.set_xlim(-0.5, M.shape[1] - 0.5)
+            ax.set_ylim(M.shape[0] - 0.5, -0.5)
             ax.plot(x, y, 'ro-')
 
     plt.show()
