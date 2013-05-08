@@ -114,6 +114,9 @@ def main():
     parser.add_argument('shards', type=int)
     parser.add_argument('--n', type=int, default=3)
     parser.add_argument('--maxiter', type=int, default=10)
+    parser.add_argument('--update-colours', 
+                        action='store_true',
+                        default=False)
     parser.add_argument('--visualise-progress', 
                         action='store_true',
                         default=False)
@@ -152,6 +155,7 @@ def main():
 
     for n in xrange(args.shards):
         X, y, all_Xy = sr.candidate_shard(J, maxiter=args.maxiter,
+                                          update_colours=args.update_colours,
                                           verbose=True)
 
         J1s = map(lambda t: sr.add_shard_to_reconstruction(J, t[0], t[1]), 
