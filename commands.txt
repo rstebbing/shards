@@ -13,3 +13,13 @@ black \
 130 30 \
 --maxiter 5 \
 --no-limit-colours
+
+python \
+solve_multiple_shards.py \
+examples/monalisa_100x100.png \
+monalisa_100x100/ \
+black \
+2.0 \
+0.3 \
+10 \
+--maxiter 10
