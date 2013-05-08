@@ -189,6 +189,16 @@ class Polygon(object):
 
         return I.reshape(shape[:2]), D.reshape(shape[:2])
 
+    def interior_angles(self):
+        thetas = map(lambda l: np.arctan2(l.m[1], l.m[0]), self.lines) 
+        thetas = np.asarray(thetas) % (2.0 * np.pi)
+        n = thetas.shape[0]
+        interior_angles = np.empty(n, dtype=np.float64)
+        for i, t0 in enumerate(thetas):
+            t1 = thetas[(i + 1) % n]
+            interior_angles[i] = (np.pi + t0 - t1) % (2.0 * np.pi)
+        return interior_angles
+
 # sigmoid
 def sigmoid(t, k=1.0):
     t = np.asarray(t)
