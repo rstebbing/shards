@@ -13,6 +13,7 @@ from sample import sample_polygon
 from scipy.linalg import norm
 from shard import Shard, Polygon
 from solve import fit_shard, colour_shard
+from time import time
 
 try:
     from scipy.misc import imsave # requires PIL
@@ -155,6 +156,8 @@ def main():
 
     sr = ShardReconstructor(I, args.alpha, n=args.n, k=args.k)
 
+    t1 = time()
+
     for n in xrange(args.shards):
         X, y, all_Xy = sr.candidate_shard(J, maxiter=args.maxiter,
                                           verbose=True)
@@ -204,6 +207,8 @@ def main():
         output_path = ensure_output_path(n, 'J.dat')
         print '->', output_path
         dump(output_path, J)
+
+        print '%d shards in %.3fs' % (n + 1, time() - t1)
 
 if __name__ == '__main__':
     main()
