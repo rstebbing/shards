@@ -178,6 +178,10 @@ def main():
             f.set_size_inches(size)
             f.savefig(output_path, dpi=dpi, bbox_inches='tight', pad_inches=0.0)
             plt.close(f)
+
+        output_path = ensure_output_path(n, '-1.png')
+        print '->', output_path
+        imsave(output_path, np.around(J * 255.0).astype(np.uint8))
             
         output_path = ensure_output_path(n, 'all_Xy.dat')
         print '->', output_path
