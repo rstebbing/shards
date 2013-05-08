@@ -2,6 +2,7 @@
 
 # Imports
 import argparse
+import matplotlib.pyplot as plt
 import os 
 import subprocess
 
@@ -24,7 +25,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('input_path')
     parser.add_argument('output_path')
-    parser.add_argument('--delay', type=int, default=10)
+    parser.add_argument('--repeat-frames', type=int, default=1)
     args = parser.parse_args()
 
     walker = os.walk(args.input_path)
@@ -34,16 +35,26 @@ def main():
                      shard_subdirs)
     image_paths = reduce(add, map(iterations_in_shard_subdir, shard_dirs))
 
-    image_list_file = '_IMAGES.txt'
-    print '%d images ->' % len(image_paths), image_list_file
-    with open(image_list_file, 'w') as fp:
+    if args.repeat_frames > 1:
+        duplicated_paths = []
+        for path in image_paths:
+            duplicated_paths += [path] * args.repeat_frames
+        image_paths = duplicated_paths
+
+    listing_path = os.path.join(args.input_path, 'images.txt')
+    print '%d images ->' % len(image_paths), listing_path
+    with open(listing_path, 'w') as fp:
         fp.write('\n'.join(image_paths))
 
-    cmd = ['convert',
-           '-delay', str(args.delay),
-           '-loop', '0',
-           '@%s' % image_list_file,
-           args.output_path]
+    h, w = plt.imread(image_paths[0]).shape[:2]
+
+    cmd = ['mencoder',
+           'mf://@%s' % listing_path,
+           '-mf',
+           'w=%d:h=%d:fps=25:type=png' % (w, h),
+           '-ovc',
+           'lavc', '-lavcopts', 'vcodec=mpeg4:vbitrate=15000:mbd=2',
+           '-o', args.output_path]
     print ' '.join(cmd)
     subprocess.check_call(cmd)
 
