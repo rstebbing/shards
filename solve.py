@@ -43,28 +43,30 @@ def shard_gradient(I, J, alpha, X, y, k, epsilon=1e-6):
     return dX.reshape(X.shape)
 
 # fit_shard
-def fit_shard(I, J, alpha, X, y, k, epsilon=1e-6, **kwargs):
+def fit_shard(I, J, alpha, X, y, k, epsilon=1e-6, update_colours=False,
+              limit_colours=True, **kwargs):
     shape = I.shape[:2]
     domain = shape[::-1]
 
-    d = alpha * (J - y)
     R0 = (I - J)
+    y = np.copy(y)
 
     def f(x):
         shard = Shard(x.reshape(X.shape), k)
         H = shard(domain)
-        R = R0 + d * H[..., np.newaxis]
+        R = R0 + alpha * (J - y) * H[..., np.newaxis]
         r = R.ravel()
         return np.dot(r, r)
 
     def fprime(x, return_energy=False):
         shard = Shard(x.reshape(X.shape), k)
         H, dX = shard(domain, return_dX=True, epsilon=epsilon)
+        d = alpha * (J - y)
         R = R0 + d * H[..., np.newaxis]
-        J = dX[..., np.newaxis] * d
-        J = J.reshape(X.size, -1).transpose()
+        J_ = dX[..., np.newaxis] * d
+        J_ = J_.reshape(X.size, -1).transpose()
         r = R.ravel()
-        dx = np.dot(r, J)
+        dx = np.dot(r, J_)
 
         if not return_energy:
             return dx
@@ -78,9 +80,15 @@ def fit_shard(I, J, alpha, X, y, k, epsilon=1e-6, **kwargs):
 
     states = []
     def save_state(xk):
-        states.append(np.copy(xk).reshape(X.shape))
-
+        states.append((np.copy(xk).reshape(X.shape), 
+                       np.copy(y)))
     callbacks.append(save_state)
+
+    if update_colours:
+        def update_colour(xk):
+            y[:] = colour_shard(I, J, alpha, xk.reshape(X.shape), k, 
+                                limit_colours=limit_colours)
+        callbacks.append(update_colour)
 
     xk = X.ravel()
     save_state(xk)
