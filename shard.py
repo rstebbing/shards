@@ -66,6 +66,8 @@ class LineSegment(object):
     def m(self, m):
         m = np.asarray(m)
         norm_m = norm(m)
+        if norm_m == 0.0:
+            raise ZeroDivisionError
         self._m = m / norm_m
         self.l = norm_m
 
