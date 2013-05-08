@@ -114,11 +114,11 @@ class LineSegment(object):
         return d.reshape(integral_domain[::-1])
 
     def __repr__(self):
-        fmt = "[%.7g, %.7g]"
+        fmt = '[%s]' % ', '.join('%.7g' for i in xrange(len(self.m)))
         return "%s(%s, %s, %.7g)" % (self.__class__.__name__,
-                                     fmt % tuple(self._m),
-                                     fmt % tuple(self._x0),
-                                     self._l)
+                                     fmt % tuple(self.m),
+                                     fmt % tuple(self.x0),
+                                     self.l)
 
 # Polygon
 class Polygon(object):
