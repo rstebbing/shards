@@ -90,17 +90,14 @@ class ShardReconstructor(object):
         kwargs.setdefault('maxiter', maxiter)
         kwargs['callback'] = callback
 
-        X1, all_X = fit_shard(self._I, J, self._alpha, 
+        X1, all_Xy = fit_shard(self._I, J, self._alpha, 
                               X, y, self._k,
                               **kwargs)
 
-        all_y = map(lambda X: y, all_X)
-
         y1 = self._colour_shard(J, X1)
-        all_X.append(X1)
-        all_y.append(y1)
+        all_Xy.append((X1, y1))
 
-        return X1, y1, zip(all_X, all_y)
+        return X1, y1, all_Xy
 
     def reconstruction_energy(self, J):
         r = (self._I - J).ravel()
