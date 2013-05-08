@@ -10,9 +10,13 @@ import os
 from itertools import count
 from pickle_ import dump
 from sample import sample_polygon
-from scipy.misc import imsave # requires PIL
 from shard import Shard, Polygon
 from solve import fit_shard, colour_shard
+
+try:
+    from scipy.misc import imsave # requires PIL
+except ImportError:
+    from matplotlib.pyplot import imsave
 
 # ShardReconstructor
 class ShardReconstructor(object):

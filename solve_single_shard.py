@@ -8,9 +8,13 @@ import os
 
 from itertools import count
 from pickle_ import dump
-from scipy.misc import imsave # requires PIL
 from solve import fit_shard, colour_shard
 from shard import Shard
+
+try:
+    from scipy.misc import imsave # requires PIL
+except ImportError:
+    from matplotlib.pyplot import imsave
 
 # main
 def main():
