@@ -120,10 +120,10 @@ def main():
     parser.add_argument('shards', type=int)
     parser.add_argument('--n', type=int, default=3)
     parser.add_argument('--maxiter', type=int, default=10)
+    parser.add_argument('--visualise-progress', 
+                        action='store_true',
+                        default=False)
     args = parser.parse_args()
-
-    if not os.path.exists(args.output_dir):
-        os.makedirs(args.output_dir)
 
     def ensure_output_path(*p):
         full_path = os.path.join(args.output_dir, *map(str, p))
@@ -162,38 +162,43 @@ def main():
                   all_Xy)
         J = J1s[-1]
 
-        for i, im in enumerate(J1s):
-            f = plt.figure()
-            ax = f.add_axes([0.0, 0.0, 1.0, 1.0], frameon=False)
+        if args.visualise_progress:
+            for i, im in enumerate(J1s):
+                f = plt.figure()
+                ax = f.add_axes([0.0, 0.0, 1.0, 1.0], frameon=False)
 
-            im = np.around(im * 255.0).astype(np.uint8)
-            ax.imshow(im)
+                im = np.around(im * 255.0).astype(np.uint8)
+                ax.imshow(im)
 
-            X = all_Xy[i][0]
-            x, y = np.transpose(np.r_['0,2', X, X[0]])
-            y = im.shape[0] - y
-            ax.plot(x, y, '-', c='w' if args.base == 'black' else 'k')
+                X = all_Xy[i][0]
+                x, y = np.transpose(np.r_['0,2', X, X[0]])
+                y = im.shape[0] - y
+                ax.plot(x, y, '-', c='w' if args.base == 'black' else 'k')
 
-            ax.set_xlim(0, im.shape[1] - 1)
-            ax.set_ylim(im.shape[0] - 1, 0)
-            ax.set_xticks([])
-            ax.set_yticks([])
+                ax.set_xlim(0, im.shape[1] - 1)
+                ax.set_ylim(im.shape[0] - 1, 0)
+                ax.set_xticks([])
+                ax.set_yticks([])
 
-            output_path = ensure_output_path(n, '%d.png' % i)
+                output_path = ensure_output_path(n, '%d.png' % i)
+                print '->', output_path
+                dpi = 100
+                f.set_dpi(dpi)
+                size = np.asarray(im.shape[:2][::-1], dtype=np.float64) / dpi
+                f.set_size_inches(size)
+                f.savefig(output_path, dpi=dpi, bbox_inches='tight', pad_inches=0.0)
+
+            output_path = ensure_output_path(n, '-1.png')
             print '->', output_path
-            dpi = 100
-            f.set_dpi(dpi)
-            size = np.asarray(im.shape[:2][::-1], dtype=np.float64) / dpi
-            f.set_size_inches(size)
-            f.savefig(output_path, dpi=dpi, bbox_inches='tight', pad_inches=0.0)
-
-        output_path = ensure_output_path(n, '-1.png')
-        print '->', output_path
-        imsave(output_path, np.around(J * 255.0).astype(np.uint8))
+            imsave(output_path, np.around(J * 255.0).astype(np.uint8))
             
         output_path = ensure_output_path(n, 'all_Xy.dat')
         print '->', output_path
         dump(output_path, (all_Xy, args.__dict__))
+
+        output_path = ensure_output_path(n, 'J.dat')
+        print '->', output_path
+        dump(output_path, J)
 
 if __name__ == '__main__':
     main()
