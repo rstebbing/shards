@@ -27,6 +27,9 @@ def main():
     parser.add_argument('--update-colours', 
                         action='store_true',
                         default=False)
+    parser.add_argument('--retain-all-shards', 
+                        action='store_true',
+                        default=False)
     parser.add_argument('--visualise-progress', 
                         action='store_true',
                         default=False)
@@ -88,7 +91,16 @@ def main():
             vis.make_residual_image(I, J1s[-1], 
                                     output_dir, verbose=True)
                 
-        J = J1s[-1]
+        E0 = sr.reconstruction_energy(J)
+        E1 = sr.reconstruction_energy(J1s[-1])
+
+        print 'E:', E0
+        print 'E(next):', E1
+
+        if not args.retain_all_shards and E1 >= E0:
+            print 'shard %d ignored' % n
+        else:
+            J = J1s[-1]
             
         output_path = ensure_output_path(n, 'all_Xy.dat')
         print '->', output_path
