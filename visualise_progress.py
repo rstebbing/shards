@@ -56,7 +56,8 @@ def make_visualisations_inplace(all_X, J1s, output_dir, verbose=False):
         ax.set_yticks([])
 
         output_path = os.path.join(output_dir, '%d.png' % i)
-        print '->', output_path
+        if verbose:
+            print '->', output_path
 
         dpi = 100
         f.set_dpi(dpi)
@@ -66,6 +67,7 @@ def make_visualisations_inplace(all_X, J1s, output_dir, verbose=False):
         plt.close(f)
 
     output_path = os.path.join(output_dir, '-1.png')
-    print '->', output_path
+    if verbose:
+        print '->', output_path
     imsave(output_path, np.around(J1s[-1] * 255.0).astype(np.uint8))
 

@@ -66,7 +66,7 @@ def main():
         if args.visualise_progress:
             vis.make_visualisations_inplace(map(itemgetter(0), all_Xy),
                                             J1s,
-                                            output_dir)
+                                            output_dir, verbose=True)
                 
         J = J1s[-1]
             
