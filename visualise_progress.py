@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
+from operator import itemgetter
+from reconstruct import ShardReconstructor
 from scipy.linalg import norm
 
 try:
@@ -71,3 +73,62 @@ def make_visualisations_inplace(all_X, J1s, output_dir, verbose=False):
         print '->', output_path
     imsave(output_path, np.around(J1s[-1] * 255.0).astype(np.uint8))
 
+# main
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('input_path')
+    parser.add_argument('output_path', nargs='?', default=None)
+    args = parser.parse_args()
+
+    def ensure_output_directory(*p):
+        root = args.output_path
+        if root is None:
+            root = args.input_path
+
+        return ensure_path(os.path.join(root, *p),
+                           is_dir=True)
+
+    walker = os.walk(args.input_path)
+    input_dir, shard_subdirs, files = next(walker)
+    shard_subdirs = sorted(shard_subdirs, key=int)
+    shard_dirs = map(lambda d: os.path.join(input_dir, d),
+                     shard_subdirs)
+    state_paths = map(lambda d: os.path.join(d, 'all_Xy.dat'),
+                      shard_dirs)
+    all_Xy, a = np.load(state_paths[0])
+
+    print '<-', a['input_path']
+    I = plt.imread(a['input_path']).astype(np.float64)[..., :3]
+
+    if a['base'] == 'white':
+        J = np.ones_like(I)
+    elif a['base'] == 'black':
+        J = np.zeros_like(I)
+    else:
+        head, tail = os.path.split(a['base'])
+        root, ext = os.path.splitext(tail)
+        if ext == '.dat':
+            J = np.load(a.base)
+        else:
+            J = plt.imread(a.base).astype(np.float64)[..., :3]
+
+    sr = ShardReconstructor(I, a['alpha'], n=a['n'], k=a['k'])
+
+    for state_index, state_path in enumerate(state_paths):
+        print '<-', state_path
+        all_Xy, _ = np.load(state_path)
+
+        J1s = map(lambda t: sr.add_shard_to_reconstruction(J, t[0], t[1]), 
+                  all_Xy)
+        J = J1s[-1]
+        
+        output_directory = ensure_output_directory(shard_subdirs[state_index])
+
+        make_visualisations_inplace(map(itemgetter(0), all_Xy),
+                                    J1s,
+                                    output_directory,
+                                    verbose=True)
+
+if __name__ == '__main__':
+    main()
+    
