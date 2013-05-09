@@ -7,15 +7,18 @@ import cPickle
 def dump(path, obj, raise_on_failure=True):
     own_fid = False
     if isinstance(path, basestring):
-        path = open(path,'wb')
+        path = open(path,'w+b')
         own_fid = True
 
     try:
-        cPickle.dump(obj, path, 2)
+        cPickle.dump(obj, path, cPickle.HIGHEST_PROTOCOL)
     except IOError:
         if raise_on_failure:
             raise
     finally:
         if own_fid:
-            path.close()
+            try:
+                path.close()
+            except IOError:
+                pass
 
