@@ -73,6 +73,34 @@ def make_visualisations_inplace(all_X, J1s, output_dir, verbose=False):
         print '->', output_path
     imsave(output_path, np.around(J1s[-1] * 255.0).astype(np.uint8))
 
+# make_residual_image
+def make_residual_image(I, J, output_dir, verbose=False):
+    def to_uint8(A):
+        A = A - np.amin(A)
+        A /= np.amax(A)
+        return np.around(A * 255.0).astype(np.uint8)
+
+    def save(filename, A):
+        output_path = os.path.join(output_dir, filename)
+        if verbose:
+            print '->', output_path
+        imsave(output_path, A)
+
+    R = I - J
+    R1 = to_uint8(R)
+    save('R.png', R1)
+
+    Rsq = np.power(R, 2)
+    Rsq1 = to_uint8(Rsq)
+    save('Rsq.png', Rsq1)
+
+    E = np.sum(Rsq, axis=-1)
+    E1 = to_uint8(E)
+    save('E.png', E1)
+    
+    for i in xrange(Rsq1.shape[2]):
+        save('Rsq_%d.png' % i, Rsq1[..., i])
+
 # main
 def main():
     parser = argparse.ArgumentParser()
