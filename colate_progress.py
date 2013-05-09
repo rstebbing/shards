@@ -10,12 +10,21 @@ from itertools import dropwhile
 from operator import add
 from pprint import pprint
 
+# image_number
+def image_number(filename):
+    root = os.path.splitext(filename)[0]
+    try:
+        return int(root)
+    except ValueError:
+        return None
+    
 # iterations_in_shard_subdir
 def iterations_in_shard_subdir(dir_):
     image_files = filter(lambda f: os.path.splitext(f)[1] == '.png',
                          os.listdir(dir_))
-    image_number = lambda f: int(os.path.splitext(f)[0])
-    sorted_image_files = sorted(image_files, key=image_number)
+    numbered_images = filter(lambda f: image_number(f) is not None,
+                             image_files)
+    sorted_image_files = sorted(numbered_images, key=image_number)
     valid_image_files = list(dropwhile(lambda f: image_number(f) < 0,
                              sorted_image_files))
     return map(lambda f: os.path.join(dir_, f), valid_image_files)
