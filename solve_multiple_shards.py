@@ -7,15 +7,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
+from operator import itemgetter
 from pickle_ import dump
 from reconstruct import ShardReconstructor
-from scipy.linalg import norm
 from time import time
-
-try:
-    from scipy.misc import imsave # requires PIL
-except ImportError:
-    from matplotlib.pyplot import imsave
+from visualise_progress import make_visualisations_inplace
 
 # main
 def main():
@@ -36,10 +32,15 @@ def main():
                         default=False)
     args = parser.parse_args()
 
-    def ensure_output_path(*p):
-        full_path = os.path.join(args.output_dir, *map(str, p))
+    def ensure_output_path(*p, **kwargs):
+        is_dir = kwargs.get('is_dir', False)
 
-        head, tail = os.path.split(full_path)
+        full_path = os.path.join(args.output_dir, *map(str, p))
+        if is_dir:
+            head = full_path
+        else:
+            head, tail = os.path.split(full_path)
+
         try:
             os.makedirs(head)
         except OSError, e:
@@ -74,42 +75,15 @@ def main():
 
         J1s = map(lambda t: sr.add_shard_to_reconstruction(J, t[0], t[1]), 
                   all_Xy)
-        J = J1s[-1]
+
+        output_dir = ensure_output_path(n, is_dir=True)
 
         if args.visualise_progress:
-            for i, im in enumerate(J1s):
-                f = plt.figure()
-                ax = f.add_axes([0.0, 0.0, 1.0, 1.0], frameon=False)
-                ax.imshow(im)
-
-                X = all_Xy[i][0]
-                x, y = np.transpose(np.r_['0,2', X, X[0]])
-                y = im.shape[0] - y
-
-                ac = np.mean(im.reshape(-1, im.shape[-1]))
-                d_to_black = norm(ac)
-                d_to_white = norm(1.0 - ac)
-                c = 'w' if d_to_black < d_to_white else 'k'
-
-                ax.plot(x, y, '-', c=c)
-
-                ax.set_xlim(-0.5, im.shape[1] - 0.5)
-                ax.set_ylim(im.shape[0] - 0.5, -0.5)
-                ax.set_xticks([])
-                ax.set_yticks([])
-
-                output_path = ensure_output_path(n, '%d.png' % i)
-                print '->', output_path
-                dpi = 100
-                f.set_dpi(dpi)
-                size = np.asarray(im.shape[:2][::-1], dtype=np.float64) / dpi
-                f.set_size_inches(size)
-                f.savefig(output_path, dpi=dpi, bbox_inches='tight', pad_inches=0.0)
-                plt.close(f)
-
-            output_path = ensure_output_path(n, '-1.png')
-            print '->', output_path
-            imsave(output_path, np.around(J * 255.0).astype(np.uint8))
+            make_visualisations_inplace(map(itemgetter(0), all_Xy),
+                                        J1s,
+                                        output_dir)
+                
+        J = J1s[-1]
             
         output_path = ensure_output_path(n, 'all_Xy.dat')
         print '->', output_path
