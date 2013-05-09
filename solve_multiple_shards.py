@@ -30,6 +30,9 @@ def main():
     parser.add_argument('--visualise-progress', 
                         action='store_true',
                         default=False)
+    parser.add_argument('--continue-from-previous', 
+                        action='store_true',
+                        default=False)
     args = parser.parse_args()
 
     ensure_output_path = partial(vis.ensure_path, args.output_dir)
@@ -51,9 +54,24 @@ def main():
 
     sr = ShardReconstructor(I, args.alpha, n=args.n, k=args.k)
 
+    if args.continue_from_previous:
+        for n in xrange(args.shards - 1, -1, -1):
+            p = os.path.join(args.output_dir, str(n), 'J.dat')
+            try:
+                J = np.load(p)
+            except IOError:
+                continue
+
+            break
+        n += 1
+    else:
+        n = 0
+
+    print 'n: [%d, %d)' % (n, args.shards)
+
     t1 = time()
 
-    for n in xrange(args.shards):
+    for n in xrange(n, args.shards):
         X, y, all_Xy = sr.candidate_shard(J, maxiter=args.maxiter,
                                           update_colours=args.update_colours,
                                           verbose=True)
@@ -72,11 +90,11 @@ def main():
             
         output_path = ensure_output_path(n, 'all_Xy.dat')
         print '->', output_path
-        dump(output_path, (all_Xy, args.__dict__))
+        dump(output_path, (all_Xy, args.__dict__), raise_on_failure=False)
 
         output_path = ensure_output_path(n, 'J.dat')
         print '->', output_path
-        dump(output_path, J)
+        dump(output_path, J, raise_on_failure=False)
 
         print '%d shards in %.3fs' % (n + 1, time() - t1)
 
