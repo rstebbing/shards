@@ -85,6 +85,8 @@ def main():
             vis.make_visualisations_inplace(map(itemgetter(0), all_Xy),
                                             J1s,
                                             output_dir, verbose=True)
+            vis.make_residual_image(I, J1s[-1], 
+                                    output_dir, verbose=True)
                 
         J = J1s[-1]
             
