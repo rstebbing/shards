@@ -148,14 +148,16 @@ def main():
 
         J1s = map(lambda t: sr.add_shard_to_reconstruction(J, t[0], t[1]), 
                   all_Xy)
-        J = J1s[-1]
-        
         output_directory = ensure_output_directory(shard_subdirs[state_index])
 
         make_visualisations_inplace(map(itemgetter(0), all_Xy),
                                     J1s,
                                     output_directory,
                                     verbose=True)
+        make_residual_image(I, J1s[-1], output_directory, verbose=True)
+
+        J = np.load(os.path.join(shard_dirs[state_index], 'J.dat'))
+        
 
 if __name__ == '__main__':
     main()
