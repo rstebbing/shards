@@ -2,16 +2,16 @@
 
 # Imports
 import argparse
-import errno
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import visualise_progress as vis
 
+from functools import partial
 from operator import itemgetter
 from pickle_ import dump
 from reconstruct import ShardReconstructor
 from time import time
-from visualise_progress import make_visualisations_inplace
 
 # main
 def main():
@@ -32,22 +32,7 @@ def main():
                         default=False)
     args = parser.parse_args()
 
-    def ensure_output_path(*p, **kwargs):
-        is_dir = kwargs.get('is_dir', False)
-
-        full_path = os.path.join(args.output_dir, *map(str, p))
-        if is_dir:
-            head = full_path
-        else:
-            head, tail = os.path.split(full_path)
-
-        try:
-            os.makedirs(head)
-        except OSError, e:
-            if e.errno != errno.EEXIST:
-                raise
-
-        return full_path
+    ensure_output_path = partial(vis.ensure_path, args.output_dir)
 
     print '<-', args.input_path
     I = plt.imread(args.input_path).astype(np.float64)[..., :3]
@@ -79,9 +64,9 @@ def main():
         output_dir = ensure_output_path(n, is_dir=True)
 
         if args.visualise_progress:
-            make_visualisations_inplace(map(itemgetter(0), all_Xy),
-                                        J1s,
-                                        output_dir)
+            vis.make_visualisations_inplace(map(itemgetter(0), all_Xy),
+                                            J1s,
+                                            output_dir)
                 
         J = J1s[-1]
             
