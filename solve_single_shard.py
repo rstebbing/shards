@@ -16,6 +16,10 @@ try:
 except ImportError:
     from matplotlib.pyplot import imsave
 
+# float_ndarray
+def float_ndarray(s):
+    return np.asarray(map(float, s.split(',')))
+
 # main
 def main():
     parser = argparse.ArgumentParser()
@@ -29,11 +33,10 @@ def main():
                         dest='limit_colours',
                         action='store_false',
                         default=True)
-    parser.add_argument('--y', type=str, default='None')
+    parser.add_argument('--y', type=float_ndarray, default=None)
     parser.add_argument('--maxiter', type=int, default=10)
 
     args = parser.parse_args()
-    args.y = eval(args.y)
 
     if args.alpha < 0.0 or args.alpha > 1.0:
         raise ValueError("0 <= alpha <= 1")

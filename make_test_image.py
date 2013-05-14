@@ -9,18 +9,21 @@ from matplotlib import cm
 from shard import Shard
 from scipy.misc import imsave # requires PIL
 
+# float_ndarray
+def float_ndarray(s):
+    return np.asarray(map(float, s.split(',')))
+
 # main
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('width', type=int)
     parser.add_argument('height', type=int)
-    parser.add_argument('y', type=str)
+    parser.add_argument('y', type=float_ndarray)
     parser.add_argument('k', type=float)
     parser.add_argument('positions', type=float, nargs='*')
     parser.add_argument('--output-path', default='{default}')
     args = parser.parse_args()
 
-    args.y = np.asarray(eval(args.y))
     if len(args.y) != 3:
         raise ValueError("y must be a 3-tuple")
     if np.any(args.y < 0.0) or np.any(args.y > 1.0):
