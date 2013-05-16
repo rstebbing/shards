@@ -57,7 +57,7 @@ def fit_shard(I, J, alpha, X, y, k, epsilon=1e-6, update_colours=False,
         H = shard(domain)
         R = R0 + alpha * (J - y) * H[..., np.newaxis]
         r = R.ravel()
-        return np.dot(r, r)
+        return 0.5 * np.dot(r, r)
 
     def fprime(x, return_energy=False):
         shard = Shard(x.reshape(X.shape), k)
