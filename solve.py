@@ -4,6 +4,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+from misc.scipy_ import approx_jac, print_comparison
 from scipy.optimize import fmin_cg
 from shard import Shard
 
@@ -44,7 +45,7 @@ def shard_gradient(I, J, alpha, X, y, k, epsilon=1e-6):
 
 # fit_shard
 def fit_shard(I, J, alpha, X, y, k, epsilon=1e-6, update_colours=False,
-              limit_colours=True, **kwargs):
+              limit_colours=True, check_gradients=False, **kwargs):
     shape = I.shape[:2]
     domain = shape[::-1]
 
@@ -72,6 +73,12 @@ def fit_shard(I, J, alpha, X, y, k, epsilon=1e-6, update_colours=False,
             return dx
         else:
             return np.dot(r, r), dx
+
+    if check_gradients:
+        x = X.ravel()
+        approx_D = approx_jac(lambda x: np.r_[f(x)], x, epsilon=1e-6)[0]
+        D = fprime(x)
+        print_comparison(approx_D=approx_D, D=D, atol=1e-3)
 
     callbacks = []
     def callback_handler(xk):
