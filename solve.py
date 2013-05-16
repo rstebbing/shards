@@ -4,8 +4,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from misc.scipy_ import approx_jac, print_comparison
-from scipy.optimize import fmin_cg
+from scipy.optimize import fmin_cg, approx_fprime
 from shard import Shard
 
 # subaxes
@@ -76,9 +75,12 @@ def fit_shard(I, J, alpha, X, y, k, epsilon=1e-6, update_colours=False,
 
     if check_gradients:
         x = X.ravel()
-        approx_D = approx_jac(lambda x: np.r_[f(x)], x, epsilon=1e-6)[0]
+        approx_D = approx_fprime(x, f, epsilon=1e-6)
         D = fprime(x)
-        print_comparison(approx_D=approx_D, D=D, atol=1e-3)
+        print 'approx_D: (%4g, %4g)' % (np.amin(approx_D), np.amax(approx_D))
+        print 'D: (%4g, %4g)' % (np.amin(D), np.amax(D))
+        atol = 1e-4
+        print 'allclose (%g)?' % atol, np.allclose(approx_D, D, atol=atol)
 
     callbacks = []
     def callback_handler(xk):
