@@ -100,3 +100,60 @@ def colour_shard(I, J, alpha, X, k, limit_colours=True):
 
     return y
 
+# fit_and_colour_shard
+def fit_and_colour_shard(I, J, alpha, X, y, k, epsilon=1e-6, xtol=1e-4,
+                         check_gradients=False,
+                         **kwargs):
+    shape = I.shape[:2]
+    domain = shape[::-1]
+
+    R0 = (I - J)
+
+    def f(x):
+        X_, y_ = x[:-3].reshape(X.shape), x[-3:]
+        shard = Shard(X_, k)
+        H = shard(domain)
+        R = R0 + alpha * (J - y_) * H[..., np.newaxis]
+        return R.ravel()
+
+    def Dfun(x):
+        X_, y_ = x[:-3].reshape(X.shape), x[-3:]
+        shard = Shard(X_, k)
+        H, dX = shard(domain, return_dX=True, epsilon=epsilon)
+        d = alpha * (J - y_)
+        JX = dX[..., np.newaxis] * d
+        aH = -alpha * H
+        Jy = np.zeros(((3,) + H.shape + (3,)), dtype=np.float64)
+        for i in xrange(3):
+            Jy[i, ..., i] = aH
+        return np.c_[JX.reshape(X.size, -1).T, Jy.reshape(3, -1).T]
+
+    if check_gradients:
+        x = np.r_[X.ravel(), y]
+        def e(x):
+            r = f(x)
+            return 0.5 * np.dot(r, r)
+        approx_D = approx_fprime(x, e, epsilon=epsilon)
+        J_ = Dfun(x)
+        r = f(x)
+        D = np.dot(r, J_)
+        print 'approx_D: (%4g, %4g)' % (np.amin(approx_D), np.amax(approx_D))
+        print 'D: (%4g, %4g)' % (np.amin(D), np.amax(D))
+        atol = 1e-4
+        print 'allclose (atol=%g)?' % atol, np.allclose(approx_D, D, atol=atol)
+
+    # `leastsq` has no callback option, so `states` only has before and after
+    states = []
+    def save_state(x):
+        X_, y_ = x[:-3].reshape(X.shape), x[-3:]
+        states.append((X_, y_))
+
+    x0 = np.r_[X.ravel(), y]
+    save_state(x0)
+
+    x, _ = leastsq(f, x0, Dfun=Dfun, xtol=xtol, full_output=False, **kwargs)
+    save_state(x)
+
+    X, y = states[-1]
+    return X, y, states
+
