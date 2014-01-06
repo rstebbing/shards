@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from scipy.optimize import approx_fprime, leastsq
-from shard import Shard
+from shard import Shard, sigmoid, sigmoid_dt, inverse_sigmoid
 
 # subaxes
 def subaxes(n):
@@ -107,29 +107,40 @@ def fit_and_colour_shard(I, J, alpha, X, y, k, epsilon=1e-6, xtol=1e-4,
     shape = I.shape[:2]
     domain = shape[::-1]
 
-    R0 = (I - J)
+    def structure_x(X, y):
+        return np.r_[X.ravel(), inverse_sigmoid(y)]
+    def destructure_x(x, return_t=False):
+        X_, t = x[:-3].reshape(X.shape), x[-3:]
+        y = sigmoid(t)
+        return (X_, y, t) if return_t else (X_, y)
 
+    R0 = (I - J)
     def f(x):
-        X_, y_ = x[:-3].reshape(X.shape), x[-3:]
+        X_, y_ = destructure_x(x)
         shard = Shard(X_, k)
         H = shard(domain)
         R = R0 + alpha * (J - y_) * H[..., np.newaxis]
         return R.ravel()
 
     def Dfun(x):
-        X_, y_ = x[:-3].reshape(X.shape), x[-3:]
+        X_, y_, t_ = destructure_x(x, return_t=True)
         shard = Shard(X_, k)
         H, dX = shard(domain, return_dX=True, epsilon=epsilon)
         d = alpha * (J - y_)
         JX = dX[..., np.newaxis] * d
         aH = -alpha * H
+        dy = sigmoid_dt(t_)
         Jy = np.zeros(((3,) + H.shape + (3,)), dtype=np.float64)
         for i in xrange(3):
-            Jy[i, ..., i] = aH
+            Jy[i, ..., i] = dy[i] * aH
         return np.c_[JX.reshape(X.size, -1).T, Jy.reshape(3, -1).T]
 
     if check_gradients:
-        x = np.r_[X.ravel(), y]
+        # set y < 1.0 - epsilon for forward difference used by `approx_fprime`
+        y1 = np.copy(y)
+        max_y = 1.0 - 2 * epsilon
+        y1[y1 > max_y] = max_y
+        x = structure_x(X, y1)
         def e(x):
             r = f(x)
             return 0.5 * np.dot(r, r)
@@ -145,10 +156,10 @@ def fit_and_colour_shard(I, J, alpha, X, y, k, epsilon=1e-6, xtol=1e-4,
     # `leastsq` has no callback option, so `states` only has before and after
     states = []
     def save_state(x):
-        X_, y_ = x[:-3].reshape(X.shape), x[-3:]
+        X_, y_ = destructure_x(x)
         states.append((X_, y_))
 
-    x0 = np.r_[X.ravel(), y]
+    x0 = structure_x(X, y)
     save_state(x0)
 
     x, _ = leastsq(f, x0, Dfun=Dfun, xtol=xtol, full_output=False, **kwargs)
