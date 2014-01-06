@@ -45,6 +45,7 @@ class LineSegment(object):
     def __init__(self, m, x0):
         self.m = m
         self.x0 = x0
+        self._integral_domain_cache = {}
 
     @classmethod
     def from_points(cls, *args):
@@ -87,17 +88,26 @@ class LineSegment(object):
         u[u > 1.0] = 1.0
         return u
 
+    # _integral_domain
+    def _integral_domain(self, integral_domain):
+        k = tuple(integral_domain)
+        try:
+            X = self._integral_domain_cache[k]
+        except KeyError:
+            slice_ = tuple(slice(None, d) for d in integral_domain[::-1])
+            G = map(np.ravel, np.mgrid[slice_])
+            X = np.transpose(G)
+            X = np.fliplr(X)
+            X[:,1] *= -1
+            X[:,1] += integral_domain[1]
+            self._integral_domain_cache[k] = X
+        return X
+
     # dt
     def dt(self, integral_domain, outside_left=None):
         # create `X` as scanning `integral_domain` along rows, from
         # "top" (max y) to "bottom" (min y)
-        slice_ = tuple(slice(None, d) for d in integral_domain[::-1])
-        G = map(np.ravel, np.mgrid[slice_])
-        X = np.transpose(G)
-        X = np.fliplr(X)
-        X[:,1] *= -1
-        X[:,1] += integral_domain[1] 
-
+        X = self._integral_domain(integral_domain)
         u = self.closest_preimage(X)
         Y = self(u)
         r = X - Y
