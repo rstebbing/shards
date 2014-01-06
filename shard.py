@@ -45,7 +45,6 @@ class LineSegment(object):
     def __init__(self, m, x0):
         self.m = m
         self.x0 = x0
-        self._integral_domain_cache = {}
 
     @classmethod
     def from_points(cls, *args):
@@ -88,11 +87,14 @@ class LineSegment(object):
         u[u > 1.0] = 1.0
         return u
 
-    # _integral_domain
-    def _integral_domain(self, integral_domain):
+
+    # _dt_integral_domain
+    _dt_integral_domain = {}
+    @classmethod
+    def _integral_domain(cls, integral_domain):
         k = tuple(integral_domain)
         try:
-            X = self._integral_domain_cache[k]
+            X = cls._dt_integral_domain[k]
         except KeyError:
             slice_ = tuple(slice(None, d) for d in integral_domain[::-1])
             G = map(np.ravel, np.mgrid[slice_])
@@ -100,7 +102,7 @@ class LineSegment(object):
             X = np.fliplr(X)
             X[:,1] *= -1
             X[:,1] += integral_domain[1]
-            self._integral_domain_cache[k] = X
+            cls._dt_integral_domain[k] = X
         return X
 
     # dt
