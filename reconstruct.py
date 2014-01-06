@@ -56,7 +56,7 @@ class ShardReconstructor(object):
         J1[J1 < 0.0] = 0.0
         return J1
 
-    def candidate_shard(self, J, maxiter=10, verbose=False, **kwargs):
+    def candidate_shard(self, J, verbose=False, **kwargs):
         X = self._sample_shard()
         y = self._colour_shard(J, X)
         if verbose:
@@ -64,23 +64,11 @@ class ShardReconstructor(object):
             print X
             print 'y:', y
 
-        callback=None
-
-        if verbose:
-            print 'solving ...'
-            solver_iteration = count(1)
-            def print_solver_iteration(xk):
-                print ' %d/%d' % (next(solver_iteration), maxiter)
-
-            callback = print_solver_iteration
-
-        kwargs = kwargs.copy()
-        kwargs.setdefault('maxiter', maxiter)
-        kwargs['callback'] = callback
-
-        X1, all_Xy = fit_shard(self._I, J, self._alpha, 
+        X1, all_X = fit_shard(self._I, J, self._alpha,
                               X, y, self._k,
                               **kwargs)
+
+        all_Xy = map(lambda x: (x, y), all_X)
 
         y1 = self._colour_shard(J, X1)
         all_Xy.append((X1, y1))
