@@ -4,7 +4,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from scipy.optimize import fmin_cg, approx_fprime
+from scipy.optimize import approx_fprime, leastsq
 from shard import Shard
 
 # subaxes
@@ -28,74 +28,54 @@ def subaxes(n):
     return f, axs
 
 # fit_shard
-def fit_shard(I, J, alpha, X, y, k, epsilon=1e-6, update_colours=False,
-              limit_colours=True, check_gradients=False, **kwargs):
+def fit_shard(I, J, alpha, X, y, k, epsilon=1e-6, xtol=1e-4,
+              check_gradients=False,
+              **kwargs):
     shape = I.shape[:2]
     domain = shape[::-1]
 
     R0 = (I - J)
-    y = np.copy(y)
 
     def f(x):
         shard = Shard(x.reshape(X.shape), k)
         H = shard(domain)
         R = R0 + alpha * (J - y) * H[..., np.newaxis]
-        r = R.ravel()
-        return 0.5 * np.dot(r, r)
+        return R.ravel()
 
-    def fprime(x, return_energy=False):
+    def Dfun(x):
         shard = Shard(x.reshape(X.shape), k)
         H, dX = shard(domain, return_dX=True, epsilon=epsilon)
         d = alpha * (J - y)
         R = R0 + d * H[..., np.newaxis]
-        J_ = dX[..., np.newaxis] * d
-        J_ = J_.reshape(X.size, -1).transpose()
-        r = R.ravel()
-        dx = np.dot(r, J_)
-
-        if not return_energy:
-            return dx
-        else:
-            return np.dot(r, r), dx
+        jac = dX[..., np.newaxis] * d
+        return jac.reshape(X.size, -1).transpose()
 
     if check_gradients:
         x = X.ravel()
-        approx_D = approx_fprime(x, f, epsilon=1e-6)
-        D = fprime(x)
+        def e(x):
+            r = f(x)
+            return 0.5 * np.dot(r, r)
+        approx_D = approx_fprime(x, e, epsilon=epsilon)
+        J_ = Dfun(x)
+        r = f(x)
+        D = np.dot(r, J_)
         print 'approx_D: (%4g, %4g)' % (np.amin(approx_D), np.amax(approx_D))
         print 'D: (%4g, %4g)' % (np.amin(D), np.amax(D))
         atol = 1e-4
-        print 'allclose (%g)?' % atol, np.allclose(approx_D, D, atol=atol)
+        print 'allclose (atol=%g)?' % atol, np.allclose(approx_D, D, atol=atol)
 
-    callbacks = []
-    def callback_handler(xk):
-        for callback in callbacks:
-            callback(xk)
 
+    # `leastsq` has no callback option, so `states` only has before and after
+    x0 = X.ravel()
     states = []
-    def save_state(xk):
-        states.append((np.copy(xk).reshape(X.shape), 
-                       np.copy(y)))
-    callbacks.append(save_state)
+    states.append(x0.reshape(X.shape))
 
-    if update_colours:
-        def update_colour(xk):
-            y[:] = colour_shard(I, J, alpha, xk.reshape(X.shape), k, 
-                                limit_colours=limit_colours)
-        callbacks.append(update_colour)
+    x, _ = leastsq(f, x0, Dfun=Dfun, xtol=xtol, full_output=False, **kwargs)
 
-    xk = X.ravel()
-    save_state(xk)
+    X = x.reshape(X.shape)
+    states.append(X)
 
-    kwargs['disp'] = 0
-    try:
-        callbacks.append(kwargs.pop('callback'))
-    except KeyError:
-        pass
-
-    x = fmin_cg(f, xk, fprime, callback=callback_handler, **kwargs)
-
-    return x.reshape(X.shape), states
+    return X, states
 
 # colour_shard
 def colour_shard(I, J, alpha, X, k, limit_colours=True):
