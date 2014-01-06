@@ -23,10 +23,8 @@ def main():
     parser.add_argument('alpha', type=float)
     parser.add_argument('shards', type=int)
     parser.add_argument('--n', type=int, default=3)
-    parser.add_argument('--maxiter', type=int, default=10)
-    parser.add_argument('--update-colours', 
-                        action='store_true',
-                        default=False)
+    parser.add_argument('--xtol', type=float, default=1e-4)
+    parser.add_argument('--epsilon', type=float, default=1e-6)
     parser.add_argument('--visualise-progress', 
                         action='store_true',
                         default=False)
@@ -78,9 +76,9 @@ def main():
         E0 = sr.reconstruction_energy(J)
         max_E_diff = 0.0
         for i in xrange(args.num_restarts_per_shard):
-            X, y, all_Xy = sr.candidate_shard(J, maxiter=args.maxiter,
-                                              update_colours=args.update_colours,
-                                              verbose=True)
+            X, y, all_Xy = sr.candidate_shard(J, verbose=True,
+                                              epsilon=args.epsilon,
+                                              xtol=args.xtol)
             J1 = sr.add_shard_to_reconstruction(J, X, y)
             E1 = sr.reconstruction_energy(J1)
             E_diff = E0 - E1
