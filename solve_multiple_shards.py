@@ -34,6 +34,10 @@ def main():
     parser.add_argument('--num-restarts-per-shard',
                         type=int,
                         default=1)
+    parser.add_argument('--dont-solve-joint',
+                        dest='solve_joint',
+                        default=True,
+                        action='store_false')
     args = parser.parse_args()
 
     ensure_output_path = partial(vis.ensure_path, args.output_dir)
@@ -76,7 +80,8 @@ def main():
         E0 = sr.reconstruction_energy(J)
         max_E_diff = 0.0
         for i in xrange(args.num_restarts_per_shard):
-            X, y, all_Xy = sr.candidate_shard(J, verbose=True,
+            X, y, all_Xy = sr.candidate_shard(J, args.solve_joint,
+                                              verbose=True,
                                               epsilon=args.epsilon,
                                               xtol=args.xtol)
             J1 = sr.add_shard_to_reconstruction(J, X, y)
