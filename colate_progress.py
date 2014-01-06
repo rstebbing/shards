@@ -3,12 +3,13 @@
 # Imports
 import argparse
 import matplotlib.pyplot as plt
-import os 
+import os
 import subprocess
 
 from itertools import dropwhile
 from operator import add
 from pprint import pprint
+from shutil import copy
 
 # image_number
 def image_number(filename):
@@ -17,7 +18,7 @@ def image_number(filename):
         return int(root)
     except ValueError:
         return None
-    
+
 # iterations_in_shard_subdir
 def iterations_in_shard_subdir(dir_):
     image_files = filter(lambda f: os.path.splitext(f)[1] == '.png',
@@ -51,6 +52,13 @@ def main():
     root, ext = os.path.splitext(tail)
     final_output_path = os.path.join(head, root + '_-1' + ext)
 
+    # TODO Put `temp_path` into a context manager?
+    temp_path = os.path.join(head, root + '_temp')
+    if os.path.exists(temp_path):
+        raise RuntimeError('temporary path "%s" exists' % temp_path)
+    if temp_path and not os.path.exists(temp_path):
+        os.makedirs(temp_path)
+
     for image_paths, output_path in [(iteration_image_paths, args.output_path),
                                      (final_image_paths, final_output_path)]:
         if args.repeat_frames > 1:
@@ -59,22 +67,31 @@ def main():
                 duplicated_paths += [path] * args.repeat_frames
             image_paths = duplicated_paths
 
-        listing_path = os.path.join(args.input_path, 'images.txt')
-        print '%d images ->' % len(image_paths), listing_path
-        with open(listing_path, 'w') as fp:
-            fp.write('\n'.join(image_paths))
+
+        # Copy images to `temp_path`.
+        temp_image_paths = []
+        for i, image_path in enumerate(image_paths):
+            temp_image_path = os.path.join(temp_path, '%d.png' %  i)
+            temp_image_paths.append(temp_image_path)
+            if os.path.exists(temp_image_path):
+                continue
+            print '%s -> %s' % (image_path, temp_image_path)
+            copy(image_path, temp_image_path)
 
         h, w = plt.imread(image_paths[0]).shape[:2]
 
-        cmd = ['mencoder',
-               'mf://@%s' % listing_path,
-               '-mf',
-               'w=%d:h=%d:fps=25:type=png' % (w, h),
-               '-ovc',
-               'lavc', '-lavcopts', 'vcodec=mpeg4:vbitrate=15000:mbd=2',
-               '-o', output_path]
+        cmd = ['ffmpeg',
+               '-i', os.path.join(temp_path, '%d.png'),
+               '-vcodec', 'mpeg4',
+               output_path]
         print ' '.join(cmd)
         subprocess.check_call(cmd)
+
+        for temp_image_path in temp_image_paths:
+            print '! %s' % temp_image_path
+            os.remove(temp_image_path)
+
+    os.rmdir(temp_path)
 
 if __name__ == '__main__':
     main()
