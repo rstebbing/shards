@@ -180,9 +180,10 @@ class Polygon(object):
 
     # dt
     def dt(self, integral_domain, outside_left=None):
-        D = np.asarray(map(lambda l: l.dt(integral_domain, outside_left),
-                           self.lines))
-        D = D.transpose(1, 2, 0)
+        D = np.empty(tuple(integral_domain)[::-1] + (len(self.lines),),
+                     dtype=np.float64)
+        for i, l in enumerate(self.lines):
+            D[..., i] = l.dt(integral_domain, outside_left)
         shape = D.shape
         D = D.reshape(-1, shape[2])
 
