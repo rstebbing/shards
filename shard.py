@@ -114,7 +114,8 @@ class LineSegment(object):
         d = np.sqrt(np.sum(r**2, axis=1))
 
         if outside_left is not None:
-            s = (np.dot(r, self.n) > 0).astype(np.float64)
+            s = np.require((np.dot(r, self.n) > 0),
+                           dtype=np.float64)
             s *= 2.0
             s -= 1.0
             if not outside_left:
