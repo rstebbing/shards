@@ -6,7 +6,7 @@ import numpy as np
 from itertools import count
 from sample import sample_polygon
 from shard import Polygon, Shard
-from solve import fit_shard, colour_shard
+from solve import fit_shard, colour_shard, fit_and_colour_shard
 
 # ShardReconstructor
 class ShardReconstructor(object):
@@ -56,23 +56,31 @@ class ShardReconstructor(object):
         J1[J1 < 0.0] = 0.0
         return J1
 
-    def candidate_shard(self, J, verbose=False, **kwargs):
+    def candidate_shard(self, J, solve_joint=True, verbose=False, **kwargs):
         X = self._sample_shard()
         y = self._colour_shard(J, X)
         if verbose:
-            print 'X:'
-            print X
-            print 'y:', y
-
-        X1, all_X = fit_shard(self._I, J, self._alpha,
-                              X, y, self._k,
-                              **kwargs)
-
-        all_Xy = map(lambda x: (x, y), all_X)
-
-        y1 = self._colour_shard(J, X1)
-        all_Xy.append((X1, y1))
-
+            print 'Initial shard:'
+            print ' X:', X.ravel()
+            print ' y:', y
+        if solve_joint:
+            if verbose:
+                print 'Solving with `fit_and_colour_shard` ...'
+            X1, y1, all_Xy = fit_and_colour_shard(self._I, J, self._alpha,
+                                                  X, y, self._k,
+                                                  **kwargs)
+        else:
+            print 'Solving with `fit_shard` ...'
+            X1, all_X = fit_shard(self._I, J, self._alpha,
+                                  X, y, self._k,
+                                  **kwargs)
+            all_Xy = map(lambda x: (x, y), all_X)
+            y1 = self._colour_shard(J, X1)
+            all_Xy.append((X1, y1))
+        if verbose:
+            print 'Final shard:'
+            print ' X:', X1.ravel()
+            print ' y:', y1
         return X1, y1, all_Xy
 
     def reconstruction_energy(self, J):
