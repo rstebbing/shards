@@ -214,9 +214,30 @@ class Polygon(object):
         return interior_angles
 
 # sigmoid
-def sigmoid(t, k=1.0):
-    t = np.asarray(t)
+def sigmoid(t, k=-1.0):
+    t = np.require(np.atleast_1d(t), dtype=np.float64)
     return 1.0 / (1.0 + np.exp(k * t))
+
+# sigmoid_dt
+def sigmoid_dt(t, k=-1.0, ktlim=1e2):
+    # TODO Better handling of limits than `ktlim` ...
+    t = np.require(np.atleast_1d(t), dtype=np.float64)
+    kt = k * t
+    kt[kt > ktlim] = ktlim
+    kt[kt < -ktlim] = -ktlim
+    ekt = np.exp(kt)
+    return (-k * ekt) / (1.0 + ekt)**2
+
+# inverse_sigmoid
+def inverse_sigmoid(y, k=-1.0, eps=1e-9):
+    if k == 0.0:
+        raise ValueError('k == 0.0')
+    # copy of `y` is intentional
+    y = np.atleast_1d(y).astype(np.float64)
+    min_, max_ = eps, 1.0 - eps
+    y[y < min_] = min_
+    y[y > max_] = max_
+    return np.log((1 - y) / y) / k
 
 # Shard
 class Shard(object):
