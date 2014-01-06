@@ -46,7 +46,6 @@ def fit_shard(I, J, alpha, X, y, k, epsilon=1e-6, xtol=1e-4,
         shard = Shard(x.reshape(X.shape), k)
         H, dX = shard(domain, return_dX=True, epsilon=epsilon)
         d = alpha * (J - y)
-        R = R0 + d * H[..., np.newaxis]
         jac = dX[..., np.newaxis] * d
         return jac.reshape(X.size, -1).transpose()
 
