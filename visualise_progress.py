@@ -11,11 +11,6 @@ from operator import itemgetter
 from reconstruct import ShardReconstructor
 from scipy.linalg import norm
 
-try:
-    from scipy.misc import imsave # requires PIL
-except ImportError:
-    from matplotlib.pyplot import imsave
-
 # ensure_path
 def ensure_path(dir_, *p, **kwargs):
     is_dir = kwargs.get('is_dir', False)
@@ -34,12 +29,38 @@ def ensure_path(dir_, *p, **kwargs):
 
     return full_path
 
+# make_image_figure
+def make_image_figure(im):
+    f = plt.figure(frameon=False)
+    ax = f.add_axes([0.0, 0.0, 1.0, 1.0], frameon=False)
+    ax.imshow(im, interpolation='none')
+    return f, ax
+
+# save_image_figure
+def save_image_figure(output_path, f, shape):
+    DPI = 72
+    ax = f.axes[0]
+    ax.set_xlim(-0.5, shape[1] - 0.5)
+    ax.set_ylim(shape[0] - 0.5, -0.5)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.xaxis.set_visible(False)
+    ax.yaxis.set_visible(False)
+    for spine in ax.spines.itervalues():
+        spine.set_visible(False)
+
+    f.set_dpi(DPI)
+    size = np.asarray(shape[:2][::-1], dtype=np.float64) / DPI
+    f.set_size_inches(size)
+    f.savefig(output_path, dpi=DPI,
+              bbox_inches='tight', pad_inches=0.0,
+              frameon=False)
+    plt.close(f)
+
 # make_visualisations_inplace
 def make_visualisations_inplace(all_X, J1s, output_dir, verbose=False):
     for i, im in enumerate(J1s):
-        f = plt.figure(frameon=False)
-        ax = f.add_axes([0.0, 0.0, 1.0, 1.0], frameon=False)
-        ax.imshow(im, interpolation='none')
+        f, ax = make_image_figure(im)
 
         X = all_X[i]
         x, y = np.transpose(np.r_['0,2', X, X[0]])
@@ -52,59 +73,39 @@ def make_visualisations_inplace(all_X, J1s, output_dir, verbose=False):
 
         ax.plot(x, y, '-', c=c)
 
-        ax.set_xlim(-0.5, im.shape[1] - 0.5)
-        ax.set_ylim(im.shape[0] - 0.5, -0.5)
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.xaxis.set_visible(False)
-        ax.yaxis.set_visible(False)
-        for spine in ax.spines.itervalues():
-            spine.set_visible(False)
-
         output_path = os.path.join(output_dir, '%d.png' % i)
         if verbose:
             print '->', output_path
 
-        DPI = 72
-        f.set_dpi(DPI)
-        size = np.asarray(im.shape[:2][::-1], dtype=np.float64) / DPI
-        f.set_size_inches(size)
-        f.savefig(output_path, dpi=DPI, bbox_inches='tight', pad_inches=0.0,
-                  frameon=False)
-        plt.close(f)
+        save_image_figure(output_path, f, im.shape)
 
     output_path = os.path.join(output_dir, '-1.png')
     if verbose:
         print '->', output_path
-    imsave(output_path, np.around(J1s[-1] * 255.0).astype(np.uint8))
+
+    f, ax = make_image_figure(J1s[-1])
+    save_image_figure(output_path, f, J1s[-1].shape)
 
 # make_residual_image
 def make_residual_image(I, J, output_dir, verbose=False):
-    def to_uint8(A):
-        A = A - np.amin(A)
-        A /= np.amax(A)
-        return np.around(A * 255.0).astype(np.uint8)
-
     def save(filename, A):
         output_path = os.path.join(output_dir, filename)
         if verbose:
             print '->', output_path
-        imsave(output_path, A)
+        f, ax = make_image_figure(A)
+        save_image_figure(output_path, f, A.shape)
 
     R = I - J
-    R1 = to_uint8(R)
-    save('R.png', R1)
+    save('R.png', R)
 
     Rsq = np.power(R, 2)
-    Rsq1 = to_uint8(Rsq)
-    save('Rsq.png', Rsq1)
+    save('Rsq.png', Rsq)
 
     E = np.sum(Rsq, axis=-1)
-    E1 = to_uint8(E)
-    save('E.png', E1)
+    save('E.png', E)
 
-    for i in xrange(Rsq1.shape[2]):
-        save('Rsq_%d.png' % i, Rsq1[..., i])
+    for i in xrange(Rsq.shape[2]):
+        save('Rsq_%d.png' % i, Rsq[..., i])
 
 # main
 def main():
@@ -162,7 +163,6 @@ def main():
         make_residual_image(I, J1s[-1], output_directory, verbose=True)
 
         J = np.load(os.path.join(shard_dirs[state_index], 'J.dat'))
-
 
 if __name__ == '__main__':
     main()
