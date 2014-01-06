@@ -56,10 +56,10 @@ def make_visualisations_inplace(all_X, J1s, output_dir, verbose=False):
         ax.set_ylim(im.shape[0] - 0.5, -0.5)
         ax.set_xticks([])
         ax.set_yticks([])
-        ax.xaxis.set_visible(False) 
-        ax.yaxis.set_visible(False) 
-        for spine in ax.spines.itervalues(): 
-            spine.set_visible(False) 
+        ax.xaxis.set_visible(False)
+        ax.yaxis.set_visible(False)
+        for spine in ax.spines.itervalues():
+            spine.set_visible(False)
 
         output_path = os.path.join(output_dir, '%d.png' % i)
         if verbose:
@@ -102,7 +102,7 @@ def make_residual_image(I, J, output_dir, verbose=False):
     E = np.sum(Rsq, axis=-1)
     E1 = to_uint8(E)
     save('E.png', E1)
-    
+
     for i in xrange(Rsq1.shape[2]):
         save('Rsq_%d.png' % i, Rsq1[..., i])
 
@@ -151,7 +151,7 @@ def main():
         print '<-', state_path
         all_Xy, _ = np.load(state_path)
 
-        J1s = map(lambda t: sr.add_shard_to_reconstruction(J, t[0], t[1]), 
+        J1s = map(lambda t: sr.add_shard_to_reconstruction(J, t[0], t[1]),
                   all_Xy)
         output_directory = ensure_output_directory(shard_subdirs[state_index])
 
@@ -162,8 +162,8 @@ def main():
         make_residual_image(I, J1s[-1], output_directory, verbose=True)
 
         J = np.load(os.path.join(shard_dirs[state_index], 'J.dat'))
-        
+
 
 if __name__ == '__main__':
     main()
-    
+

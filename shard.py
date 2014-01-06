@@ -121,7 +121,7 @@ class LineSegment(object):
             if not outside_left:
                 s *= -1.0
             d *= s
-                
+
         return d.reshape(integral_domain[::-1])
 
     def __repr__(self):
@@ -146,7 +146,7 @@ class Polygon(object):
                 return False
 
         return True
-        
+
     @classmethod
     def from_points(cls, P, *args, **kwargs):
         if len(P) < 3:
@@ -161,14 +161,14 @@ class Polygon(object):
 
     @property
     def points(self):
-        return np.asarray(map(lambda l: l.points[0], 
+        return np.asarray(map(lambda l: l.points[0],
                               self.lines))
 
     @points.setter
     def points(self, P):
         if len(self.lines) != len(P):
             raise ValueError("len(P) != %d" % len(self.lines))
-            
+
         for i, p in enumerate(P):
             q = P[(i + 1) % len(P)]
             self.lines[i].x0 = p
@@ -189,7 +189,7 @@ class Polygon(object):
 
         if outside_left is not None:
             s = np.any(D > 0.0, axis=1).astype(np.float64)
-            s *= 2.0 
+            s *= 2.0
             s -= 1.0
 
         np.absolute(D, D)
@@ -202,7 +202,7 @@ class Polygon(object):
         return I.reshape(shape[:2]), D.reshape(shape[:2])
 
     def interior_angles(self):
-        thetas = map(lambda l: np.arctan2(l.m[1], l.m[0]), self.lines) 
+        thetas = map(lambda l: np.arctan2(l.m[1], l.m[0]), self.lines)
         thetas = np.asarray(thetas) % (2.0 * np.pi)
         n = thetas.shape[0]
         interior_angles = np.empty(n, dtype=np.float64)
@@ -231,7 +231,7 @@ class Shard(object):
         n = self._X.shape[0]
         expected_interior = (n - 2) * np.pi
         expected_exterior = 2.0 * np.pi * n - expected_interior
-        self._outside_left = (np.abs(sum_interior - expected_interior) >= 
+        self._outside_left = (np.abs(sum_interior - expected_interior) >=
                               np.abs(sum_interior - expected_exterior))
 
     def __call__(self, integral_domain, return_dX=False, epsilon=1e-6):
@@ -353,5 +353,4 @@ if __name__ == '__main__':
     # main_test_linedt()
     # main_test_Polygon()
     main_test_Shard()
-
 

@@ -25,10 +25,10 @@ def main():
     parser.add_argument('--n', type=int, default=3)
     parser.add_argument('--xtol', type=float, default=1e-4)
     parser.add_argument('--epsilon', type=float, default=1e-6)
-    parser.add_argument('--visualise-progress', 
+    parser.add_argument('--visualise-progress',
                         action='store_true',
                         default=False)
-    parser.add_argument('--continue-from-previous', 
+    parser.add_argument('--continue-from-previous',
                         action='store_true',
                         default=False)
     parser.add_argument('--num-restarts-per-shard',
@@ -96,7 +96,7 @@ def main():
         print 'E:', E0
         print 'E(next):', min_E1
 
-        J1s = map(lambda t: sr.add_shard_to_reconstruction(J, t[0], t[1]), 
+        J1s = map(lambda t: sr.add_shard_to_reconstruction(J, t[0], t[1]),
                   all_Xy)
         J = J1s[-1]
 
@@ -105,9 +105,9 @@ def main():
             vis.make_visualisations_inplace(map(itemgetter(0), all_Xy),
                                             J1s,
                                             output_dir, verbose=True)
-            vis.make_residual_image(I, J1s[-1], 
+            vis.make_residual_image(I, J1s[-1],
                                     output_dir, verbose=True)
-                
+
         output_path = ensure_output_path(n, 'all_Xy.dat')
         print '->', output_path
         dump(output_path, (all_Xy, args.__dict__), raise_on_failure=False)
@@ -120,3 +120,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

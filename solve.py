@@ -100,3 +100,4 @@ def colour_shard(I, J, alpha, X, k, limit_colours=True):
         y[y < 0.0] = 0.0
 
     return y
+

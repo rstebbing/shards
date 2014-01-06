@@ -29,7 +29,7 @@ def main():
     parser.add_argument('k', type=float)
     parser.add_argument('alpha', type=float)
     parser.add_argument('positions', type=float, nargs='*')
-    parser.add_argument('--no-limit-colours', 
+    parser.add_argument('--no-limit-colours',
                         dest='limit_colours',
                         action='store_false',
                         default=True)
@@ -68,11 +68,11 @@ def main():
 
     if args.y is None:
         print 'initialise y (limit_colours = "%s") ...' % args.limit_colours
-        y = colour_shard(I, J, args.alpha, X, args.k, 
+        y = colour_shard(I, J, args.alpha, X, args.k,
                          limit_colours=args.limit_colours)
     else:
         y = np.asarray(args.y)
-        
+
     print 'y:', y
 
     solver_iteration = count(1)
@@ -87,7 +87,7 @@ def main():
     print X1
 
     print 'solving y (limit_colours = "%s") ...' % args.limit_colours
-    y1 = colour_shard(I, J, args.alpha, X1, args.k, 
+    y1 = colour_shard(I, J, args.alpha, X1, args.k,
                       limit_colours=args.limit_colours)
     print 'y1:', y1
 
@@ -100,7 +100,7 @@ def main():
     def X_to_image(X, y):
         shard = Shard(X, args.k)
         H = shard(domain)
-        Ji = (J * (1.0 - args.alpha * H[..., np.newaxis]) 
+        Ji = (J * (1.0 - args.alpha * H[..., np.newaxis])
               + args.alpha * y * H[..., np.newaxis])
         Ji[Ji > 1.0] = 1.0
         Ji[Ji < 0.0] = 0.0
@@ -120,4 +120,3 @@ def main():
 if __name__ == '__main__':
     main()
 
-        

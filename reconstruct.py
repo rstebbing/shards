@@ -27,7 +27,7 @@ class ShardReconstructor(object):
             X = sample_polygon(self._n)
             X *= np.random.rand() * np.amin(self._domain)
             X += np.random.rand(len(self._domain)) * self._domain
-            
+
             max_, min_ = np.amax(X, axis=0), np.amin(X, axis=0)
             required_displacement = np.empty(len(max_), dtype=np.float64)
             for i, d in enumerate(self._domain):
