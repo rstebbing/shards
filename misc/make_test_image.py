@@ -45,7 +45,7 @@ def main():
 
     X = np.asarray(args.positions).reshape(-1, 2)
     shard = Shard(X, args.k)
-    
+
     domain = (args.width, args.height)
     alpha = shard(domain)
     D = args.y.reshape(-1, 1, 1) * alpha
