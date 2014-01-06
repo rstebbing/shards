@@ -27,15 +27,15 @@ def main():
     parser.add_argument('--update-colours', 
                         action='store_true',
                         default=False)
-    parser.add_argument('--retain-all-shards', 
-                        action='store_true',
-                        default=False)
     parser.add_argument('--visualise-progress', 
                         action='store_true',
                         default=False)
     parser.add_argument('--continue-from-previous', 
                         action='store_true',
                         default=False)
+    parser.add_argument('--num-restarts-per-shard',
+                        type=int,
+                        default=1)
     args = parser.parse_args()
 
     ensure_output_path = partial(vis.ensure_path, args.output_dir)
@@ -75,15 +75,34 @@ def main():
     t1 = time()
 
     for n in xrange(n, args.shards):
-        X, y, all_Xy = sr.candidate_shard(J, maxiter=args.maxiter,
-                                          update_colours=args.update_colours,
-                                          verbose=True)
+        E0 = sr.reconstruction_energy(J)
+        max_E_diff = 0.0
+        for i in xrange(args.num_restarts_per_shard):
+            X, y, all_Xy = sr.candidate_shard(J, maxiter=args.maxiter,
+                                              update_colours=args.update_colours,
+                                              verbose=True)
+            J1 = sr.add_shard_to_reconstruction(J, X, y)
+            E1 = sr.reconstruction_energy(J1)
+            E_diff = E0 - E1
+            if E_diff > max_E_diff:
+                max_X_y = (X, y, all_Xy)
+                max_E_diff = E_diff
+                min_E1 = E1
+
+        if max_E_diff == 0.0:
+            # no shard produced a decrease in energy.
+            print 'shard %d ignored' % n
+            continue
+
+        X, y, all_Xy = max_X_y
+        print 'E:', E0
+        print 'E(next):', min_E1
 
         J1s = map(lambda t: sr.add_shard_to_reconstruction(J, t[0], t[1]), 
                   all_Xy)
+        J = J1s[-1]
 
         output_dir = ensure_output_path(n, is_dir=True)
-
         if args.visualise_progress:
             vis.make_visualisations_inplace(map(itemgetter(0), all_Xy),
                                             J1s,
@@ -91,17 +110,6 @@ def main():
             vis.make_residual_image(I, J1s[-1], 
                                     output_dir, verbose=True)
                 
-        E0 = sr.reconstruction_energy(J)
-        E1 = sr.reconstruction_energy(J1s[-1])
-
-        print 'E:', E0
-        print 'E(next):', E1
-
-        if not args.retain_all_shards and E1 >= E0:
-            print 'shard %d ignored' % n
-        else:
-            J = J1s[-1]
-            
         output_path = ensure_output_path(n, 'all_Xy.dat')
         print '->', output_path
         dump(output_path, (all_Xy, args.__dict__), raise_on_failure=False)
