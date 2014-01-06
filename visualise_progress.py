@@ -37,9 +37,9 @@ def ensure_path(dir_, *p, **kwargs):
 # make_visualisations_inplace
 def make_visualisations_inplace(all_X, J1s, output_dir, verbose=False):
     for i, im in enumerate(J1s):
-        f = plt.figure()
+        f = plt.figure(frameon=False)
         ax = f.add_axes([0.0, 0.0, 1.0, 1.0], frameon=False)
-        ax.imshow(im)
+        ax.imshow(im, interpolation='none')
 
         X = all_X[i]
         x, y = np.transpose(np.r_['0,2', X, X[0]])
@@ -56,16 +56,21 @@ def make_visualisations_inplace(all_X, J1s, output_dir, verbose=False):
         ax.set_ylim(im.shape[0] - 0.5, -0.5)
         ax.set_xticks([])
         ax.set_yticks([])
+        ax.xaxis.set_visible(False) 
+        ax.yaxis.set_visible(False) 
+        for spine in ax.spines.itervalues(): 
+            spine.set_visible(False) 
 
         output_path = os.path.join(output_dir, '%d.png' % i)
         if verbose:
             print '->', output_path
 
-        dpi = 100
-        f.set_dpi(dpi)
-        size = np.asarray(im.shape[:2][::-1], dtype=np.float64) / dpi
+        DPI = 72
+        f.set_dpi(DPI)
+        size = np.asarray(im.shape[:2][::-1], dtype=np.float64) / DPI
         f.set_size_inches(size)
-        f.savefig(output_path, dpi=dpi, bbox_inches='tight', pad_inches=0.0)
+        f.savefig(output_path, dpi=DPI, bbox_inches='tight', pad_inches=0.0,
+                  frameon=False)
         plt.close(f)
 
     output_path = os.path.join(output_dir, '-1.png')
