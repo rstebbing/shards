@@ -4,7 +4,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from itertools import ifilter, imap
+from itertools import count, ifilter, imap
 from operator import mul
 
 from scipy.optimize import approx_fprime, leastsq
@@ -173,8 +173,10 @@ def fit_and_colour_shard(I, J, alpha, X, y, k, epsilon=1e-6, xtol=1e-4,
     return X, y, states
 
 # fit_and_colour_shards
-def fit_and_colour_shards(I, J0, alpha, Xs, ys, k, epsilon=1e-6, xtol=1e-6,
-                          check_gradients=False,
+def fit_and_colour_shards(I, J0, alpha, Xs, ys, k, epsilon=1e-6,
+                          ftol=1e-8, xtol=1e-8, maxfev=0,
+                          check_gradients=False, return_info=False,
+                          verbose=False,
                           **kwargs):
     shape = I.shape[:2]
     domain = shape[::-1]
@@ -183,13 +185,18 @@ def fit_and_colour_shards(I, J0, alpha, Xs, ys, k, epsilon=1e-6, xtol=1e-6,
     ys = np.require(np.atleast_1d(ys), dtype=np.float64)
     X_shape, X_size, y_size = Xs[0].shape, Xs[0].size, ys[0].size
     N = len(Xs)
+    x_size = (X_size + y_size) * N
+
+    if maxfev == 0:
+        # same as `leastsq` but used by verbose option in `f(x)`
+        maxfev = 100 * (x_size + 1)
 
     def structure_x(Xs, ys):
         return np.hstack(map(np.ravel, Xs) + map(inverse_sigmoid, ys))
     def destructure_x(x, return_ts=False):
-        Xs = x[:N * X_size].reshape((N,) + X_shape)
+        Xs = list(x[:N * X_size].reshape((N,) + X_shape))
         ts = x[N* X_size:].reshape(N, y_size)
-        ys = sigmoid(ts)
+        ys = list(sigmoid(ts))
         return (Xs, ys, ts) if return_ts else (Xs, ys)
 
     def build_J(x):
@@ -201,9 +208,15 @@ def fit_and_colour_shards(I, J0, alpha, Xs, ys, k, epsilon=1e-6, xtol=1e-6,
             J += (ys[i] - J) * aH[..., np.newaxis]
         return J
 
+    fx_eval_count = count(1)
     def f(x):
         R = I - build_J(x)
-        return R.ravel()
+        r = R.ravel()
+        if verbose:
+            # ugh
+            print ' [%d/%d]: %g' % (next(fx_eval_count), maxfev,
+                                    0.5 * np.dot(r, r))
+        return r
     def e(x):
         r = f(x)
         return 0.5 * np.dot(r, r)
@@ -265,9 +278,16 @@ def fit_and_colour_shards(I, J0, alpha, Xs, ys, k, epsilon=1e-6, xtol=1e-6,
     x0 = structure_x(Xs, ys)
     save_state(x0)
 
-    x, _ = leastsq(f, x0, xtol=xtol, Dfun=Dfun, full_output=False, **kwargs)
+    x, exit_code = leastsq(f, x0, Dfun=Dfun,
+                           ftol=ftol, xtol=xtol, maxfev=maxfev,
+                           full_output=False, **kwargs)
     save_state(x)
 
     Xs, ys = states[-1]
-    return Xs, ys, states
+    if return_info:
+        ei, Ji = e(x0), build_J(x0)
+        ef, Jf = e(x), build_J(x)
+        return (Xs, ys, states), (exit_code, ei, ef, Ji, Jf)
+    else:
+        return Xs, ys, states
 
