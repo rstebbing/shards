@@ -76,6 +76,7 @@ def main():
 
     t1 = time()
 
+    all_iterations_Xy = []
     for n in xrange(n, args.shards):
         E0 = sr.reconstruction_energy(J)
         max_E_diff = 0.0
@@ -98,6 +99,7 @@ def main():
             continue
 
         X, y, all_Xy = max_X_y
+        all_iterations_Xy.append(all_Xy)
         print 'E:', E0
         print 'E(next):', min_E1
 
@@ -116,6 +118,11 @@ def main():
         output_path = ensure_output_path(n, 'all_Xy.dat')
         print '->', output_path
         dump(output_path, (all_Xy, args.__dict__), raise_on_failure=False)
+
+        output_path = ensure_output_path(n, 'all_iterations_Xy.dat')
+        print '->', output_path
+        dump(output_path, (all_iterations_Xy, args.__dict__),
+             raise_on_failure=False)
 
         output_path = ensure_output_path(n, 'J.dat')
         print '->', output_path
