@@ -85,5 +85,5 @@ class ShardReconstructor(object):
 
     def reconstruction_energy(self, J):
         r = (self._I - J).ravel()
-        return np.dot(r, r)
+        return 0.5 * np.dot(r, r)
 
