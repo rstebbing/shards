@@ -4,6 +4,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+from itertools import ifilter, imap
+from operator import mul
+
 from scipy.optimize import approx_fprime, leastsq
 from shard import Shard, sigmoid, sigmoid_dt, inverse_sigmoid
 
@@ -168,4 +171,103 @@ def fit_and_colour_shard(I, J, alpha, X, y, k, epsilon=1e-6, xtol=1e-4,
 
     X, y = states[-1]
     return X, y, states
+
+# fit_and_colour_shards
+def fit_and_colour_shards(I, J0, alpha, Xs, ys, k, epsilon=1e-6, xtol=1e-6,
+                          check_gradients=False,
+                          **kwargs):
+    shape = I.shape[:2]
+    domain = shape[::-1]
+
+    Xs = np.require(np.atleast_2d(Xs), dtype=np.float64)
+    ys = np.require(np.atleast_1d(ys), dtype=np.float64)
+    X_shape, X_size, y_size = Xs[0].shape, Xs[0].size, ys[0].size
+    N = len(Xs)
+
+    def structure_x(Xs, ys):
+        return np.hstack(map(np.ravel, Xs) + map(inverse_sigmoid, ys))
+    def destructure_x(x, return_ts=False):
+        Xs = x[:N * X_size].reshape((N,) + X_shape)
+        ts = x[N* X_size:].reshape(N, y_size)
+        ys = sigmoid(ts)
+        return (Xs, ys, ts) if return_ts else (Xs, ys)
+
+    def build_J(x):
+        Xs, ys = destructure_x(x)
+        J = J0.copy()
+        for i in xrange(N):
+            shard = Shard(Xs[i], k)
+            aH = alpha * shard(domain)
+            J += (ys[i] - J) * aH[..., np.newaxis]
+        return J
+
+    def f(x):
+        R = I - build_J(x)
+        return R.ravel()
+    def e(x):
+        r = f(x)
+        return 0.5 * np.dot(r, r)
+
+    def prod(I, A, start=0, l=None):
+        N = len(A)
+        indices = xrange(start, N)
+        if l is not None:
+            indices = ifilter(lambda i: i != l, indices)
+        As = imap(A.__getitem__, indices)
+        return reduce(mul, As, I)
+    def Dfun(x):
+        Xs, ys, ts = destructure_x(x, return_ts=True)
+        aHs, omaHs, adHs = [], [], []
+        for i in xrange(N):
+            shard = Shard(Xs[i], k)
+            H, dX = shard(domain, return_dX=True, epsilon=epsilon)
+            aH = alpha * H
+            aHs.append(aH)
+            omaHs.append(1.0 - aH)
+            adHs.append(alpha * dX)
+
+        I = np.ones_like(aHs[0])
+        JXs, Jts = [], []
+        for l in xrange(N):
+            JXl = J0 * prod(I, omaHs, 0, l)[..., np.newaxis]
+            for i in xrange(l):
+                JXli = aHs[i] * prod(I, omaHs, i + 1, l)
+                JXl += ys[i] * JXli[..., np.newaxis]
+            prod_lp1 = prod(I, omaHs, l + 1)
+            JXl -= ys[l] * prod_lp1[..., np.newaxis]
+            JXl_T = adHs[l][..., np.newaxis] * JXl
+            JXs.append(JXl_T.reshape(X_size, -1))
+
+            neg_aH_prod_lp1 = -(aHs[l] * prod_lp1)
+            dy = sigmoid_dt(ts[l])
+            Jt = np.zeros(((y_size,) + I.shape + (y_size,)),
+                          dtype=np.float64)
+            for i in xrange(y_size):
+                Jt[i, ..., i] = dy[i] * neg_aH_prod_lp1
+            Jts.append(Jt.reshape(y_size, -1))
+        return np.vstack(JXs + Jts).T
+
+    if check_gradients:
+        x = structure_x(Xs, ys)
+        approx_D = approx_fprime(x, e, epsilon=epsilon)
+        J_ = Dfun(x)
+        r = f(x)
+        D = np.dot(r, J_)
+        print 'approx_D: (%4g, %4g)' % (np.amin(approx_D), np.amax(approx_D))
+        print 'D: (%4g, %4g)' % (np.amin(D), np.amax(D))
+        atol = 1e-4
+        print 'allclose (atol=%g)?' % atol, np.allclose(approx_D, D, atol=atol)
+
+    states = []
+    def save_state(x):
+        states.append(destructure_x(x))
+
+    x0 = structure_x(Xs, ys)
+    save_state(x0)
+
+    x, _ = leastsq(f, x0, xtol=xtol, Dfun=Dfun, full_output=False, **kwargs)
+    save_state(x)
+
+    Xs, ys = states[-1]
+    return Xs, ys, states
 
