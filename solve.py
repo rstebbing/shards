@@ -110,9 +110,9 @@ def fit_and_colour_shard(I, J, alpha, X, y, k, epsilon=1e-6, xtol=1e-4,
     def structure_x(X, y):
         return np.r_[X.ravel(), inverse_sigmoid(y)]
     def destructure_x(x, return_t=False):
-        X_, t = x[:-3].reshape(X.shape), x[-3:]
-        y = sigmoid(t)
-        return (X_, y, t) if return_t else (X_, y)
+        X_, t = x[:-y.size].reshape(X.shape), x[-y.size:]
+        y_ = sigmoid(t)
+        return (X_, y_, t) if return_t else (X_, y_)
 
     R0 = (I - J)
     def f(x):
@@ -130,10 +130,11 @@ def fit_and_colour_shard(I, J, alpha, X, y, k, epsilon=1e-6, xtol=1e-4,
         JX = dX[..., np.newaxis] * d
         aH = -alpha * H
         dy = sigmoid_dt(t_)
-        Jy = np.zeros(((3,) + H.shape + (3,)), dtype=np.float64)
-        for i in xrange(3):
+        n = y.size
+        Jy = np.zeros(((n,) + H.shape + (n,)), dtype=np.float64)
+        for i in xrange(n):
             Jy[i, ..., i] = dy[i] * aH
-        return np.c_[JX.reshape(X.size, -1).T, Jy.reshape(3, -1).T]
+        return np.c_[JX.reshape(X.size, -1).T, Jy.reshape(n, -1).T]
 
     if check_gradients:
         # set y < 1.0 - epsilon for forward difference used by `approx_fprime`
