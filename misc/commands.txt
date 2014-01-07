@@ -1,30 +1,5 @@
-python make_test_image.py 180 180 1.0,0.0,0.0 2.0 40 40 90 126.6 140 40 --output-path data/{default}
-python make_test_image.py 180 180 1.0,0.0,0.0 0.5 40 40 90 126.6 140 126.6 90 40 --output-path data/{default}
+python ./misc/make_test_image.py 180 180 1.0,0.0,0.0 2.0 40 40 90 126.6 140 40 --output-path data/{default}
+python ./misc/make_test_image.py 180 180 1.0,0.0,0.0 0.5 40 40 90 126.6 140 126.6 90 40 --output-path data/{default}
 
-python \
-solve_single_shard.py \
-data/180,180-40,40,90,127,140,40-1,0,0-2.png \
-data/180,180-40,40,90,127,140,40-1,0,0-2 \
-black \
-1.0 \
-0.5 \
-50 30 \
-100 117 \
-130 30 \
---maxiter 5 \
---no-limit-colours
-
-python \
-solve_multiple_shards.py \
-examples/monalisa_100x100.png \
-monalisa_100x100/ \
-black \
-2.0 \
-0.3 \
-10 \
---maxiter 10
-
-python solve_multiple_shards.py examples/monalisa_100x100.png monalisa_100x100_black_4.0_0.3_1000_10_update-colours/ black 4.0 0.3 1000 --maxiter 10 --update-colours --visualise-progress
-python solve_multiple_shards.py examples/firefox_100x100.png firefox_100x100_white_4.0_0.3_1000_10_update-colours white 4.0 0.3 1000 --maxiter 10 --update-colours --visualise-progress
-python solve_multiple_shards.py examples/microbe_100x100.png microbe_100x100_white_4.0_0.3_1000_10_update-colours white 4.0 0.3 1000 --maxiter 10 --update-colours --visualise-progress
-python solve_multiple_shards.py examples/mondrian_100x100.png mondrian_100x100_white_4.0_0.3_1000_10_update-colours white 4.0 0.3 1000 --maxiter 10 --update-colours --visualise-progress
+python solve_multiple_shards.py examples/monalisa_100x100.png monalisa_100x100_black_4.0_0.3_100_1e-5_10/ black 4.0 0.3 100 --xtol=1e-5 --num-restarts-per-shard=10 --visualise-progress
+python ./refine_multiple_shards_joint.py ./monalisa_100x100_black_4.0_0.3_100_1e-5_10/49/all_iterations_Xy.dat ./monalisa_100x100_black_4.0_0.3_100_1e-5_10_R_49_1e-9_5000 --xtol=1e-9 --maxfev=5000 --visualise-progress
