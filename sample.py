@@ -1,10 +1,7 @@
-# sample
+# sample.py
 
 # Imports
 import numpy as np
-import matplotlib.pyplot as plt
-
-from matplotlib import cm
 
 # sample_polygon
 def sample_polygon(n):
@@ -19,6 +16,9 @@ def sample_polygon(n):
 
 # main_test_sample_polygon
 def main_test_sample_polygon():
+    import matplotlib.pyplot as plt
+    from matplotlib import cm
+
     N = 10
     n = 4
 
