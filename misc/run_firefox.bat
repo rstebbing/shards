@@ -1,0 +1,3 @@
+python solve_multiple_shards.py examples/firefox_100x100.png firefox_100x100_white_4.0_0.3_100_1e-5_10_ALT/ white 4.0 0.3 100 --xtol=1e-5 --num-restarts-per-shard=10 --visualise-progress --dont-solve-joint
+python solve_multiple_shards.py examples/firefox_100x100.png firefox_100x100_white_4.0_0.3_100_1e-5_10/ white 4.0 0.3 100 --xtol=1e-5 --num-restarts-per-shard=10 --visualise-progress
+python ./refine_multiple_shards_joint.py ./firefox_100x100_white_4.0_0.3_100_1e-5_10/49/all_iterations_Xy.dat ./firefox_100x100_white_4.0_0.3_100_1e-5_10_R_49_1e-12_200 --ftol=0.0 --xtol=1e-12 --maxfev=200 --visualise-progress

@@ -1,0 +1,3 @@
+python solve_multiple_shards.py examples/monalisa_100x100.png monalisa_100x100_black_4.0_0.3_100_1e-5_10_ALT/ black 4.0 0.3 100 --xtol=1e-5 --num-restarts-per-shard=10 --visualise-progress --dont-solve-joint
+python solve_multiple_shards.py examples/monalisa_100x100.png monalisa_100x100_black_4.0_0.3_100_1e-5_10/ black 4.0 0.3 100 --xtol=1e-5 --num-restarts-per-shard=10 --visualise-progress
+python ./refine_multiple_shards_joint.py ./monalisa_100x100_black_4.0_0.3_100_1e-5_10/49/all_iterations_Xy.dat ./monalisa_100x100_black_4.0_0.3_100_1e-5_10_R_49_1e-12_200 --ftol=0.0 --xtol=1e-12 --maxfev=200 --visualise-progress
