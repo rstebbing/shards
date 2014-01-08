@@ -1,44 +1,9 @@
 # shard.py
 
 # Imports
-import matplotlib.pyplot as plt
 import numpy as np
 
-from matplotlib import cm
 from scipy.linalg import norm
-
-# Plotter
-class Plotter(object):
-    def __init__(self, delta=0.0):
-        self._delta = delta
-
-        i = np.finfo(np.float64)
-        self._xmin = i.max
-        self._xmax = i.min
-        self._ymin = i.max
-        self._ymax = i.min
-
-    def __call__(self, ax, P, *args, **kwargs):
-        P = np.atleast_2d(P)
-        x, y = np.transpose(P)
-        ax.plot(x, y, *args, **kwargs)
-
-        self._xmin = min(self._xmin, np.amin(x))
-        self._xmax = max(self._xmax, np.amax(x))
-        self._ymin = min(self._ymin, np.amin(y))
-        self._ymax = max(self._ymax, np.amax(y))
-
-    def _lim(self, min_, max_):
-        d = self._delta * (max_ - min_)
-        return (min_ - d, max_ + d)
-
-    @property
-    def xlim(self):
-        return self._lim(self._xmin, self._xmax)
-
-    @property
-    def ylim(self):
-        return self._lim(self._ymin, self._ymax)
 
 # LineSegment
 class LineSegment(object):
@@ -336,13 +301,13 @@ def main_test_Polygon():
         x, y = np.transpose(np.r_['0,2', P, P[0]])
         y = D.shape[0] - y
 
-        to_view = (D, sigmoid(D, k=1.0), I)
-        f, axs = plt.subplots(len(to_view), 1)
-        for ax, M in zip(axs, to_view):
-            ax.imshow(M)
+        for M in (D, sigmoid(D, k=1.0), I):
+            f, ax = plt.subplots()
+            im = ax.imshow(M, cmap='gray')
             ax.set_xlim(-0.5, M.shape[1] - 0.5)
             ax.set_ylim(M.shape[0] - 0.5, -0.5)
             ax.plot(x, y, 'ro-')
+            f.colorbar(im)
 
     plt.show()
 
@@ -372,8 +337,45 @@ def main_test_Shard():
     plt.show()
 
 if __name__ == '__main__':
-    # main_test_LineSegment()
-    # main_test_linedt()
-    # main_test_Polygon()
+    import matplotlib.pyplot as plt
+
+    from matplotlib import cm
+
+    # Plotter
+    class Plotter(object):
+        def __init__(self, delta=0.0):
+            self._delta = delta
+
+            i = np.finfo(np.float64)
+            self._xmin = i.max
+            self._xmax = i.min
+            self._ymin = i.max
+            self._ymax = i.min
+
+        def __call__(self, ax, P, *args, **kwargs):
+            P = np.atleast_2d(P)
+            x, y = np.transpose(P)
+            ax.plot(x, y, *args, **kwargs)
+
+            self._xmin = min(self._xmin, np.amin(x))
+            self._xmax = max(self._xmax, np.amax(x))
+            self._ymin = min(self._ymin, np.amin(y))
+            self._ymax = max(self._ymax, np.amax(y))
+
+        def _lim(self, min_, max_):
+            d = self._delta * (max_ - min_)
+            return (min_ - d, max_ + d)
+
+        @property
+        def xlim(self):
+            return self._lim(self._xmin, self._xmax)
+
+        @property
+        def ylim(self):
+            return self._lim(self._ymin, self._ymax)
+
+    main_test_LineSegment()
+    main_test_linedt()
+    main_test_Polygon()
     main_test_Shard()
 
