@@ -1,34 +1,12 @@
 # solve.py
 
 # Imports
-import matplotlib.pyplot as plt
 import numpy as np
 
 from itertools import count, ifilter, imap
 from operator import mul
-
 from scipy.optimize import approx_fprime, leastsq
 from shard import Shard, sigmoid, sigmoid_dt, inverse_sigmoid
-
-# subaxes
-def subaxes(n):
-    rows = int(np.floor(np.sqrt(n)))
-    cols = int(np.ceil(float(n) / rows))
-    w = 1.0 / cols
-    h = 1.0 / rows
-
-    f = plt.figure()
-    axs = []
-    for i in xrange(n):
-        r = (rows - 1) - i / cols
-        c = i % cols
-        ax = f.add_axes([c * w, r * h, w, h], frameon=False)
-        axs.append(ax)
-
-    if len(axs) == 1:
-        axs = axs[0]
-
-    return f, axs
 
 # fit_shard
 def fit_shard(I, J, alpha, X, y, k, epsilon=1e-6, xtol=1e-4,
