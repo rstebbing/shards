@@ -68,7 +68,8 @@ def main():
             image_paths = duplicated_paths
 
 
-        # Copy images to `temp_path`.
+        # XXX Copy images to `temp_path`.
+        # TODO Find better tool than "ffmpeg" when on Windows ...
         temp_image_paths = []
         for i, image_path in enumerate(image_paths):
             temp_image_path = os.path.join(temp_path, '%d.png' %  i)
