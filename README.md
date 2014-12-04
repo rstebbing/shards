@@ -1,6 +1,10 @@
 shards
 ======
 
+<p align="center">
+  <img src="https://github.com/rstebbing/shards/raw/master/README.png" alt="Shards"/>
+</p>
+
 Python implementation accompanying the blog post [Shards: Building an image out of triangles] [1].
 Example commands are available under:
 
