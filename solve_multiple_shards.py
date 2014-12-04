@@ -15,9 +15,11 @@ import visualise_progress as vis
 
 from functools import partial
 from operator import itemgetter
-from pickle_ import dump
 from reconstruct import ShardReconstructor
 from time import time
+
+# Requires `rscommon`.
+from rscommon.pickle_ import dump
 
 # main
 def main():

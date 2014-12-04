@@ -14,9 +14,11 @@ import visualise_progress as vis
 
 from functools import partial
 from operator import itemgetter
-from pickle_ import dump
 from solve import fit_and_colour_shards
 from time import time
+
+# Requires `rscommon`.
+from rscommon.pickle_ import dump
 
 # main
 def main():
